@@ -16,6 +16,7 @@ public class ChassisTester extends LinearOpMode {
     long lastNanoTime=0;
     @Override
     public void runOpMode() throws InterruptedException {
+        RobotPosition.refresh(hardwareMap);
         RobotPosition.getInstance().update();
         ChassisController chassis = new ChassisController(hardwareMap,new Pose2d(0,0,0));
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
