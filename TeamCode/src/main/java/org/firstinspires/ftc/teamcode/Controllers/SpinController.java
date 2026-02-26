@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Turntable;
+package org.firstinspires.ftc.teamcode.Controllers;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -38,7 +38,7 @@ public class SpinController {
     public static double SpinPower=0.5;
 
     public DcMotorEx SpinController;
-    public  ArtifactDetector sensorDistance1;//吸球口处传感器，1号槽
+    public ArtifactDetector sensorDistance1;//吸球口处传感器，1号槽
     public  ArtifactDetector sensorDistance2;//逆时针第二个，2号槽
     public  ArtifactDetector sensorDistance3;//逆时针第三个，3号槽
     //注意：槽位编号为相对于底盘的位置，不随转盘转动而改变

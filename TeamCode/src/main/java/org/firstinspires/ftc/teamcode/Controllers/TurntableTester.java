@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Turntable;
+package org.firstinspires.ftc.teamcode.Controllers;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Turntable;
+package org.firstinspires.ftc.teamcode.Controllers;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
@@ -76,7 +76,8 @@ public class ArtifactDetector {
             total++;
         }else{
             situation.add(0);
-        }situation.add(total);
+        }
+        situation.add(total);
         return situation;
     }
 
