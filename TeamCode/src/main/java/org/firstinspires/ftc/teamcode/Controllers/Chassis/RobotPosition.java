@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Controllers.Chassis;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.Localizer;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 
@@ -25,6 +26,15 @@ public class RobotPosition {
         if(instance==null){
             throw new IllegalStateException("RobotPosition not initialized, call setInstance first");
         }
+        return instance;
+    }
+    /**
+     * 初始化位置(使用旧位置)
+     * @param hardwareMap 硬件映射
+     * @return RobotPosition实例
+     */
+    public static RobotPosition refresh(HardwareMap hardwareMap){
+        instance=new RobotPosition();
         return instance;
     }
 

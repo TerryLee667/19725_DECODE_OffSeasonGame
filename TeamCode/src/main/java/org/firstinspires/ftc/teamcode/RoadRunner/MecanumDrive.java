@@ -353,10 +353,10 @@ public final class MecanumDrive {
 
         // TODO: 确保你的配置中有这些名称的电机（或修改它们）
         //   参考 https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
-        leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
-        rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
-        rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
+        leftFront = hardwareMap.get(DcMotorEx.class, "fL");
+        leftBack = hardwareMap.get(DcMotorEx.class, "bL");
+        rightBack = hardwareMap.get(DcMotorEx.class, "bR");
+        rightFront = hardwareMap.get(DcMotorEx.class, "fR");
 
         // 设置电机零功率行为为制动
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
