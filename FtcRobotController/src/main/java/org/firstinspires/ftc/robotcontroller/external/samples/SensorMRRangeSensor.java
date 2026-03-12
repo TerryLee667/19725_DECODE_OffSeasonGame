@@ -51,6 +51,7 @@ public class SensorMRRangeSensor extends LinearOpMode {
 
     ModernRoboticsI2cRangeSensor rangeSensor;
 
+
     @Override public void runOpMode() {
 
         // get a reference to our compass
