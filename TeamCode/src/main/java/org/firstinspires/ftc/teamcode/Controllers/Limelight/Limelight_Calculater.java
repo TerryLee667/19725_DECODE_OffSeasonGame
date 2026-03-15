@@ -1,14 +1,18 @@
 package org.firstinspires.ftc.teamcode.Controllers.Limelight;
 
 
+import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Controllers.Motor_pid;
 
-
+@TeleOp
+@Config
 public class Limelight_Calculater {
     Telemetry telemetry;
+    HardwareMap hardwareMap;
     public static double tx = Limelight.tx;
     public static double ty = Limelight.ty;
     public static double txnc = Limelight.txnc;
@@ -18,7 +22,14 @@ public class Limelight_Calculater {
     TurnTester_PID turnTester_pid;
 
 
-    public void turning(){
+    public void turning(boolean isActive) {
+         turnTester_pid = new TurnTester_PID(hardwareMap);
+         if (isActive){
+             tx = Limelight.tx;
+             ty = Limelight.ty;
+             txnc = Limelight.txnc;
+             tync = Limelight.tync;
+         }
         if (!hasTarget){
             isturning = true;
             telemetry.addData("IsTurning","true");

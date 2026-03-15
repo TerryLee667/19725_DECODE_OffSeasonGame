@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.Controllers.Limelight;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Controllers.Motor_pid;
 
 
+@TeleOp
 public class TurnTester_PID {
     HardwareMap hardwareMap;
     Motor_pid motor;
