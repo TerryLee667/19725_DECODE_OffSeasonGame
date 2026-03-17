@@ -29,6 +29,7 @@ public class Limelight_Calculater {
              ty = Limelight.ty;
              txnc = Limelight.txnc;
              tync = Limelight.tync;
+             return;
          }
         if (!hasTarget){
             isturning = true;
@@ -38,10 +39,12 @@ public class Limelight_Calculater {
                 turnTester_pid.targeting(-1);
                 telemetry.addData("TurnDirection", "Right");
                 telemetry.addData("tx",tx);
+                return;
             } else if (tx < 0) {
                 turnTester_pid.targeting(1);
                 telemetry.addData("TurnDirection", "Left");
                 telemetry.addData("tx",tx);
+                return;
             }
             telemetry.addData("tx",tx);
             telemetry.update();
