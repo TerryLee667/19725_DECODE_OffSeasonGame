@@ -91,7 +91,7 @@ import org.firstinspires.ftc.teamcode.utility.PIDController;
         }
         public void block(){
             //telemetry.addData("blockPower", BlockPower);
-            Motor_PID.setPower(BlockPower);
+            Motor_PID.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
 
         public double getCurrent_encoder(){
