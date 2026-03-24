@@ -10,7 +10,9 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @Config
 public class Limelight_Calculater {
     Telemetry telemetry;
-    HardwareMap hardwareMap;
+    LLresult llresult;
+
+
     public static double tx = Limelight.tx;
     public static double ty = Limelight.ty;
     public static double txnc = Limelight.txnc;
@@ -18,10 +20,14 @@ public class Limelight_Calculater {
     public static boolean hasTarget = false;
     public static boolean isturning = false;
     TurnTester_PID turnTester_pid;
+    public Limelight_Calculater(HardwareMap hardwareMap){
+        turnTester_pid = new TurnTester_PID(hardwareMap);
+        llresult=new LLresult(hardwareMap);
+    }
 
 
     public boolean turning(boolean isActive) {
-         turnTester_pid = new TurnTester_PID(hardwareMap);
+
          if (isActive){
              tx = Limelight.tx;
              ty = Limelight.ty;

@@ -23,6 +23,7 @@ public class limelight2026_2_22 extends LinearOpMode {
     public double TargetXDegreesmin = -10;
     public double TargetSpeed = 30;
     public double StopSpeed = 0;
+    public double TargetAngle = 0;
     Motor_PID Motor_PID = new Motor_PID();
 
 //    public double TargetSpeed_FORWARD = 50;
@@ -74,19 +75,18 @@ public class limelight2026_2_22 extends LinearOpMode {
                             fr.getFiducialId(), fr.getFamily(), fr.getTargetXDegrees(), fr.getTargetYDegrees());
 
                     if (result.getTx() > TargetXDegreesmax) {
-                        Motor_PID.turn(TargetSpeed);
+                        Motor_PID.turn(TargetSpeed, TargetAngle, result.getTx());
                         telemetry.addData("TurnAction: ","Left_Turning");
                         telemetry.addData("TurnSpeed: ",Motor_PID.getVelocity());
                     }
                     else if (result.getTx() < TargetXDegreesmin){
                         
-                        Motor_PID.turn(-TargetSpeed);
+                        Motor_PID.turn(-TargetSpeed, TargetAngle, result.getTx());
                         telemetry.addData("TurnAction: ","Right_Turning");
                         telemetry.addData("TurnSpeed: ",Motor_PID.getVelocity());
                     }
                     else {
-
-                        Motor_PID.turn(StopSpeed);
+                        Motor_PID.block();
                         telemetry.addData("TurnAction: ","Stop");
                     }
 //                    telemetry.update();

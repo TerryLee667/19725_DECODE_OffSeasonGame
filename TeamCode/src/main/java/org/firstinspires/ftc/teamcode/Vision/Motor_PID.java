@@ -59,10 +59,10 @@ import org.firstinspires.ftc.teamcode.utility.PIDController;
          *应该比预期转速高80-100
          */
         //todo:fix low velocity issue
-        public boolean turn(double targetSpeed){
+        public boolean turn(double targetSpeed,double targetAngle, double currentAngle){
             pidController.setPID(k_p,k_i,k_d);
             //如果是double，不可以 == 0，需要写abs < 0.0001
-            if(targetSpeed < 0.0001){
+            if(Double.isNaN(targetAngle) || Math.abs(targetAngle) < 0.0001){
                 Motor_PID.setPower(0);
                 pidController.reset();
                 previous_time = System.currentTimeMillis();
@@ -81,7 +81,9 @@ import org.firstinspires.ftc.teamcode.utility.PIDController;
             }
             Motor_PID.setPower(Power);
             previous_time = current_time;
-            if(Math.abs(targetSpeed - current_speed) < 50){
+            //角度误差判断
+            double angleError = targetAngle - currentAngle;
+            if(Math.abs(angleError) < 50){
                 return true;
             } else {
                 return false;
