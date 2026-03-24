@@ -12,13 +12,13 @@ import org.firstinspires.ftc.teamcode.RoadRunner.Drawing;
 
 @Config
 @TeleOp(name = "ChassisTester", group = "Tests")
-public class ChassisTester extends LinearOpMode {
+public class ChassisTester_VER2 extends LinearOpMode {
     long lastNanoTime=0;
     @Override
     public void runOpMode() throws InterruptedException {
-        RobotPosition.refresh(hardwareMap);
-        RobotPosition.getInstance().update();
-        ChassisController chassis = new ChassisController(hardwareMap,new Pose2d(0,0,0));
+        RobotPosition_ver1.refresh(hardwareMap);
+        RobotPosition_ver1.getInstance().update();
+        ChassisController_VER2 chassis = new ChassisController_VER2(hardwareMap,new Pose2d(0,0,0));
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         waitForStart();
         lastNanoTime=System.nanoTime();
@@ -36,12 +36,12 @@ public class ChassisTester extends LinearOpMode {
             telemetry.addData("NoHeadModeStartError:",chassis.noHeadModeStartError);
             telemetry.addData("NoHeadMode",chassis.getUseNoHeadMode()?"NoHead":"Manual");
             telemetry.addData("RunMode",chassis.runningToPoint?"RUNNING_TO_POINT":"MANUAL");//chassis.isTargetPointReached()
-            telemetry.addData("Position",RobotPosition.getInstance().getPose().toString());
+            telemetry.addData("Position", RobotPosition_ver1.getInstance().getPose().toString());
             telemetry.update();
             lastNanoTime = System.nanoTime();
 
 
-            Pose2d pose = RobotPosition.getInstance().getPose();
+            Pose2d pose = RobotPosition_ver1.getInstance().getPose();
 
             TelemetryPacket packet = new TelemetryPacket();
             packet.fieldOverlay().setStroke("#3F51B5");

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Shooter;
+package org.firstinspires.ftc.teamcode.Controllers.Turret.Shooter;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;

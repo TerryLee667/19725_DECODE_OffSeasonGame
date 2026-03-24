@@ -2,9 +2,7 @@ package org.firstinspires.ftc.teamcode.Controllers.Chassis;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RoadRunner.Localizer;
-import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 
 /*
  简短说明：
@@ -14,15 +12,15 @@ import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
  - 提供 getPose/getX/getY/getHeading 访问当前位姿。
 */
 
-public class RobotPosition {
-    private static RobotPosition instance; // 单例实例
+public class RobotPosition_ver1 {
+    private static RobotPosition_ver1 instance; // 单例实例
 
     /**
      * 获取RobotPosition实例
      * @return RobotPosition实例
      * @throws IllegalStateException 如果实例未初始化
      */
-    public static RobotPosition getInstance(){
+    public static RobotPosition_ver1 getInstance(){
         if(instance==null){
             throw new IllegalStateException("RobotPosition not initialized, call setInstance first");
         }
@@ -33,8 +31,8 @@ public class RobotPosition {
      * @param hardwareMap 硬件映射
      * @return RobotPosition实例
      */
-    public static RobotPosition refresh(HardwareMap hardwareMap){
-        instance=new RobotPosition();
+    public static RobotPosition_ver1 refresh(HardwareMap hardwareMap){
+        instance=new RobotPosition_ver1();
         return instance;
     }
 

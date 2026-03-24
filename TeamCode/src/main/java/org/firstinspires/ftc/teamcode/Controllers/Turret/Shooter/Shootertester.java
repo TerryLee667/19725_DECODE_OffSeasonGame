@@ -1,11 +1,9 @@
-package org.firstinspires.ftc.teamcode.Controllers.Shooter;
+package org.firstinspires.ftc.teamcode.Controllers.Turret.Shooter;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @TeleOp(name = "Shootertester", group = "Tests")
 public class Shootertester extends LinearOpMode {
