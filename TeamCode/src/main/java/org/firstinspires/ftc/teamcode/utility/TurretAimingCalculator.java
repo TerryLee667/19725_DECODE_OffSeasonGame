@@ -15,9 +15,13 @@ public class TurretAimingCalculator {
     private double targetX;
     private double targetY;
 
+    private double targetHeight;
+
     // 炮台相对机器人中心的偏移参数（核心调整项，根据硬件实际值设置，单位：与机器人位置同尺度）
     public double turretOffsetX; // 炮台在机器人坐标系x轴方向的偏移（正=右，负=左）
     public double turretOffsetY; // 炮台在机器人坐标系y轴方向的偏移（正=上，负=下）
+
+    public double turretOffsetH; // 炮台在机器人坐标系z轴方向的偏移（正=上，负=下）
 
     /**
      * 构造方法（默认炮台无偏移，机器人中心即为炮台中心）
@@ -43,6 +47,11 @@ public class TurretAimingCalculator {
         this.targetX = targetX;
         this.targetY = targetY;
     }
+
+    public void setTargetHeight(double height) {
+        this.targetHeight=height;
+    }
+
 
     // ---------------------- 第二个核心方法：计算炮台旋转角 ----------------------
     /**
@@ -90,6 +99,20 @@ public class TurretAimingCalculator {
         return Math.round(deltaTheta * 1000000.0) / 1000000.0;
     }
 
+    //TODO:机播豆包给我把这玩意写了。。。。。
+
+    public static double ToBoardDegree(double targetDistance){
+        return 10086*targetDistance;//todo角度制，实际测试后修改拟合函数;
+    }
+
+    public double calculateTurretAxisAngle(double theta, double targetHeight) {
+        double thetaRad=Math.toRadians(theta);
+        double targetDistance=targetHeight/Math.tan(thetaRad);
+        return TurretAimingCalculator.ToBoardDegree(targetDistance);
+    }
+
+
+
     // ---------------------- 工具方法：弧度归一化到[-π, π] ----------------------
     /**
      * 将任意弧度值归一化到[-π, π]范围，对应角度[-180°, 180°]
@@ -117,12 +140,17 @@ public class TurretAimingCalculator {
         return targetY;
     }
 
+    public double getTargetHeight(){ return targetHeight; }
+
     public double getTurretOffsetX() {
         return turretOffsetX;
     }
 
     public double getTurretOffsetY() {
         return turretOffsetY;
+    }
+    public double getTurretOffsetH() {
+        return turretOffsetH;
     }
 
     /**
