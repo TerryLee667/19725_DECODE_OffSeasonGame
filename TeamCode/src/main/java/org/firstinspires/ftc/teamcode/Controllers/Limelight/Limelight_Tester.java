@@ -19,7 +19,7 @@ public class Limelight_Tester extends LinearOpMode {
         while (opModeIsActive()) {
             if (gamepad2.yWasPressed()) {
                 turnTesterPid = new TurnTester_PID(hardwareMap);
-                limelight_calculater.turning();
+                limelight_calculater.turning(true);
             }
         }
     }
