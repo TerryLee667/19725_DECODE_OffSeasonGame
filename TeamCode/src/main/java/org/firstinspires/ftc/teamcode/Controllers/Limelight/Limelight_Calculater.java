@@ -2,13 +2,11 @@ package org.firstinspires.ftc.teamcode.Controllers.Limelight;
 
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Controllers.Motor_pid;
 
-@TeleOp
+
 @Config
 public class Limelight_Calculater {
     Telemetry telemetry;
@@ -22,14 +20,14 @@ public class Limelight_Calculater {
     TurnTester_PID turnTester_pid;
 
 
-    public void turning(boolean isActive) {
+    public boolean turning(boolean isActive) {
          turnTester_pid = new TurnTester_PID(hardwareMap);
          if (isActive){
              tx = Limelight.tx;
              ty = Limelight.ty;
              txnc = Limelight.txnc;
              tync = Limelight.tync;
-             return;
+             return isActive;
          }
         if (!hasTarget){
             isturning = true;
@@ -39,23 +37,22 @@ public class Limelight_Calculater {
                 turnTester_pid.targeting(-1);
                 telemetry.addData("TurnDirection", "Right");
                 telemetry.addData("tx",tx);
-                return;
             } else if (tx < 0) {
                 turnTester_pid.targeting(1);
                 telemetry.addData("TurnDirection", "Left");
                 telemetry.addData("tx",tx);
-                return;
             }
             telemetry.addData("tx",tx);
             telemetry.update();
+            return isturning;
         }else {
             isturning = false;
             turnTester_pid.targeting(0);
             telemetry.addData("IsTurning","false");
             telemetry.addData("tx",tx);
             telemetry.update();
+            return isturning;
         }
-
     }
 
 }
