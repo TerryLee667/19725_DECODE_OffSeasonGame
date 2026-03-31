@@ -113,7 +113,7 @@ public class MotorPIDCore {
         motor.setPower(Power);
         previous_time = current_time;
         double angleError = targetAngle - currentAngle;
-        return Math.abs(angleError) < 50;
+        return Math.abs(angleError) < 5;
     }
     
     public void block() {

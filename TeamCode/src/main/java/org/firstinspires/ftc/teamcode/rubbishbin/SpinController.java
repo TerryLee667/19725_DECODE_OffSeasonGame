@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Turret.turner;
+package org.firstinspires.ftc.teamcode.rubbishbin;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;

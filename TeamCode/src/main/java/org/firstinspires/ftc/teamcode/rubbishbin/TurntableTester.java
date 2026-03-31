@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Turret.turner;
+package org.firstinspires.ftc.teamcode.rubbishbin;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
