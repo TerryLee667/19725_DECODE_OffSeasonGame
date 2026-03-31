@@ -20,9 +20,9 @@ public class Limelight_Calculater {
     public static boolean hasTarget = false;
     public static boolean isturning = false;
     TurnTester_PID turnTester_pid;
-    public Limelight_Calculater(HardwareMap hardwareMap){
-        turnTester_pid = new TurnTester_PID(hardwareMap);
-        llresult=new LLresult(hardwareMap);
+    public Limelight_Calculater(HardwareMap hardwareMap,Telemetry telemetry){
+        turnTester_pid = new TurnTester_PID(hardwareMap,telemetry);
+        this.telemetry = telemetry;
     }
 
 
@@ -33,7 +33,7 @@ public class Limelight_Calculater {
              ty = Limelight.ty;
              txnc = Limelight.txnc;
              tync = Limelight.tync;
-             return isActive;
+
          }
         if (!hasTarget){
             isturning = true;

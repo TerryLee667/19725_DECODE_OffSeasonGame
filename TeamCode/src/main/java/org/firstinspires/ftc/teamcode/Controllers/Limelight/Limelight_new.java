@@ -17,15 +17,15 @@ import java.nio.channels.ClosedSelectorException;
 @TeleOp(name = "Limelight_new",group = "Tests")
 public class Limelight_new extends LinearOpMode {
     private Limelight3A limelight;
-    public Telemetry telemetry;
+//    public Telemetry telemetry;
     public double TargetXDegreesmax = 10;
     public double TargetXDegreesmin = -10;
     public double TargetSpeed = 30;
     public double StopSpeed = 0;
     public double TargetAngle = 0;
     Motor_PID Motor_PID = new Motor_PID();
-    LLStatus status = limelight.getStatus();
-    LLResult result = limelight.getLatestResult();
+//    LLStatus status = limelight.getStatus();
+
     public double tx;
     public double ty;
     public double txnc;
@@ -33,51 +33,52 @@ public class Limelight_new extends LinearOpMode {
     public double maxtx = 1;
     public double mintx = -1;
 
-    public enum ROBOT_STATUS {
-        TURNING,
-        WAITING,
-        STOP;
-    }
-
-    ROBOT_STATUS robotStatus = ROBOT_STATUS.WAITING;
-
-    public enum TEAM_COLOR {
-        RED, BLUE
-    }
-
-    TEAM_COLOR teamColor;
-
-    public enum TRIGGER_STATUS {
-        OPEN,
-        CLOSE
-    }
-
-    TRIGGER_STATUS triggerStatus = TRIGGER_STATUS.CLOSE;
-
-    public enum TURNER_STATUS {
-        TURN,
-        STOP;
-    }
-
-    TURNER_STATUS turnerStatus = TURNER_STATUS.STOP;
+//    public enum ROBOT_STATUS {
+//        TURNING,
+//        WAITING,
+//        STOP;
+//    }
+//
+//    ROBOT_STATUS robotStatus = ROBOT_STATUS.WAITING;
+//
+//    public enum TEAM_COLOR {
+//        RED, BLUE
+//    }
+//
+//    TEAM_COLOR teamColor;
+//
+//    public enum TRIGGER_STATUS {
+//        OPEN,
+//        CLOSE
+//    }
+//
+//    TRIGGER_STATUS triggerStatus = TRIGGER_STATUS.CLOSE;
+//
+//    public enum TURNER_STATUS {
+//        TURN,
+//        STOP;
+//    }
+//
+//    TURNER_STATUS turnerStatus = TURNER_STATUS.STOP;
 
     TurnTester_PID turnTesterPid;
     public  boolean isturning = false;
     public  boolean hasTarget = false;
 
 
-    void Init() {
+//    void Init() {
+//
+//        //todo set team color
+////        teamColor = TEAM_COLOR.BLUE;
+//
+//
+//
+//        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+////        telemetry = InstanceTelemetry.init(telemetry);
 
-        //todo set team color
-        teamColor = TEAM_COLOR.BLUE;
-
-
-
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-//        telemetry = InstanceTelemetry.init(telemetry);
-
-    }
+//    }
     void turning(double maxtx, double mintx) {
+        LLResult result = limelight.getLatestResult();
         if (result.isValid()){
             if (result.getTx() > maxtx || result.getTx() < mintx ){
                 hasTarget = false;
@@ -133,7 +134,8 @@ public class Limelight_new extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         //初始化
-        Init();
+//        Init();
+        Motor_PID.motor(hardwareMap,telemetry,"motor",false);
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
@@ -153,8 +155,9 @@ public class Limelight_new extends LinearOpMode {
         while (opModeIsActive()){
             if (gamepad1.yWasPressed()){
                 limelight.start();
-                telemetry.update();
+
                 turning(maxtx,mintx);
+                telemetry.update();
             }
         }
 

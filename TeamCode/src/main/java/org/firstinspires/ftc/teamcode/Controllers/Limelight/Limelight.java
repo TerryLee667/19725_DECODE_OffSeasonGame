@@ -18,7 +18,7 @@ import java.util.List;
 @TeleOp
 public class Limelight extends LinearOpMode {
     private Limelight3A limelight;
-    public Telemetry telemetry;
+//    public Telemetry telemetry;
     public static double tx;
     public static double ty;
     public static double txnc;

@@ -27,17 +27,17 @@ public class Megtag1_Tester extends LinearOpMode {
         STOP;
     }
 
-    Limelight_new.ROBOT_STATUS robotStatus = Limelight_new.ROBOT_STATUS.WAITING;
+    ROBOT_STATUS robotStatus = ROBOT_STATUS.WAITING;
 
     public enum TEAM_COLOR {
         RED, BLUE
     }
 
-    Limelight_new.TEAM_COLOR teamColor;
+    TEAM_COLOR teamColor;
     void Init() {
 
         //todo set team color
-        teamColor = Limelight_new.TEAM_COLOR.BLUE;
+        teamColor = TEAM_COLOR.BLUE;
 
 
 

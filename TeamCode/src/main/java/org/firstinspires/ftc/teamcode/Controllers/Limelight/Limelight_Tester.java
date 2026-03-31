@@ -15,10 +15,10 @@ public class Limelight_Tester extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        limelight_calculater = new Limelight_Calculater(hardwareMap,telemetry);
         waitForStart();
         while (opModeIsActive()) {
             if (gamepad2.yWasPressed()) {
-                turnTesterPid = new TurnTester_PID(hardwareMap);
                 limelight_calculater.turning(true);
             }
         }
