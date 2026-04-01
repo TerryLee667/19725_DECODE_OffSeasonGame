@@ -83,7 +83,7 @@ public class Limelight_new extends LinearOpMode {
             if (result.getTx() > maxtx || result.getTx() < mintx ){
                 hasTarget = false;
             }
-            if (!hasTarget) {
+            while (!hasTarget) {
                 isturning = true;
                 telemetry.addData("IsTurning", "true");
     //            if (tx > maxtx) {
@@ -109,6 +109,7 @@ public class Limelight_new extends LinearOpMode {
                     Motor_PID.turn(TargetSpeed, TargetAngle, result.getTx());
                     telemetry.addData("TurnAction: ","Left_Turning");
                     telemetry.addData("TurnSpeed: ",Motor_PID.getVelocity());
+                    telemetry.addData("tx",result.getTx());
                     hasTarget = false;
                 }
                 else if (result.getTx() < TargetXDegreesmin){
@@ -116,16 +117,21 @@ public class Limelight_new extends LinearOpMode {
                     Motor_PID.turn(-TargetSpeed, TargetAngle, result.getTx());
                     telemetry.addData("TurnAction: ","Right_Turning");
                     telemetry.addData("TurnSpeed: ",Motor_PID.getVelocity());
+                    telemetry.addData("tx",result.getTx());
                     hasTarget = false;
                 }
                 else {
                     Motor_PID.block();
                     telemetry.addData("TurnAction: ","Stop");
+                    telemetry.addData("tx",result.getTx());
                     isturning = false;
                     hasTarget = true;
+
                 }
             }
 
+        }else {
+            telemetry.addData("Limelight", "No data available");
         }
     }
 
@@ -150,15 +156,25 @@ public class Limelight_new extends LinearOpMode {
         telemetry.update();
 
 
-
+        telemetry.addData(">", "Robot Ready.  Press Play.");
         waitForStart();
         while (opModeIsActive()){
+            LLStatus status = limelight.getStatus();
+            telemetry.addData("Name", "%s",
+                    status.getName());
+            telemetry.addData("LL", "Temp: %.1fC, CPU: %.1f%%, FPS: %d",
+                    status.getTemp(), status.getCpu(),(int)status.getFps());
+            telemetry.addData("Pipeline", "Index: %d, Type: %s",
+                    status.getPipelineIndex(), status.getPipelineType());
             if (gamepad1.yWasPressed()){
                 limelight.start();
 
                 turning(maxtx,mintx);
-                telemetry.update();
+            } else if (gamepad1.xWasPressed()) {
+                limelight.stop();
+                return;
             }
+            telemetry.update();
         }
 
 
