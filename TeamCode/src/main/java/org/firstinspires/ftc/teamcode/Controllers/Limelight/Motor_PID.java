@@ -35,7 +35,7 @@ public class Motor_PID {
     public double max_i = 1;
     private PIDController pidController;
 
-    public void motor(HardwareMap hardwareMap, Telemetry telemetryrc, String motorName, boolean ifReverse){
+    public void motor(HardwareMap hardwareMap, Telemetry telemetry, String motorName, boolean ifReverse){
         Motor_PID = hardwareMap.get(DcMotorEx.class, motorName);
         Motor_PID.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         Motor_PID.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -44,7 +44,7 @@ public class Motor_PID {
             Motor_PID.setDirection(DcMotorSimple.Direction.REVERSE);
         else
             Motor_PID.setDirection(DcMotorSimple.Direction.FORWARD);
-        this.telemetry = telemetryrc;
+        this.telemetry = telemetry;
         pidController = new PIDController(k_p, k_i, k_d, max_i);
         previous_time = System.currentTimeMillis();
 
@@ -59,6 +59,7 @@ public class Motor_PID {
      */
     //todo:fix low velocity issue
     public boolean turn(double targetSpeed,double targetAngle, double currentAngle){
+
         pidController.setPID(k_p,k_i,k_d);
         //如果是double，不可以 == 0，需要写abs < 0.0001
         if(Double.isNaN(targetAngle) || Math.abs(targetAngle) < 0.0001){

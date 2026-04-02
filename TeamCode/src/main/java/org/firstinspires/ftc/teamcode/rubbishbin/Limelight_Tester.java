@@ -1,8 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Limelight;
-
-import static org.firstinspires.ftc.teamcode.Controllers.Limelight.Limelight_Calculater.tx;
-import org.firstinspires.ftc.teamcode.Controllers.Limelight.Limelight_Calculater;
-import org.firstinspires.ftc.teamcode.Controllers.Limelight.TurnTester_PID;
+package org.firstinspires.ftc.teamcode.rubbishbin;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -15,10 +11,10 @@ public class Limelight_Tester extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        limelight_calculater = new Limelight_Calculater(hardwareMap,telemetry);
         waitForStart();
         while (opModeIsActive()) {
             if (gamepad2.yWasPressed()) {
-                turnTesterPid = new TurnTester_PID(hardwareMap);
                 limelight_calculater.turning(true);
             }
         }
