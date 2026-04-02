@@ -31,7 +31,8 @@ public class Limelight_new extends LinearOpMode {
 //    public Telemetry telemetry;
 //    public double TargetXDegreesmax = 10;
 //    public double TargetXDegreesmin = -10;
-//    public double TargetAngle = 0;
+    public double TargetAngle = 0;
+    public double TargetSpeed = 30;
 //    public double tx;
 //    public double ty;
 //    public double txnc;
@@ -108,6 +109,7 @@ public class Limelight_new extends LinearOpMode {
         telemetry.addData(">", "Robot Ready.  Press Play.");
         waitForStart();
         while (opModeIsActive()){
+//            Motor_PID.motor(hardwareMap,telemetry,"motor",false);
             LLStatus status = limelight.getStatus();
             LLResult result = limelight.getLatestResult();
             telemetry.addData("Name", "%s",
