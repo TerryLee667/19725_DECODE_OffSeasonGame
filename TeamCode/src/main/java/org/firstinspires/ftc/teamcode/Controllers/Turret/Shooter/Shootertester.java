@@ -8,23 +8,31 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 @TeleOp(name = "Shootertester", group = "Tests")
 public class Shootertester extends LinearOpMode {
 
-    public Shooter shooter;
+    public ShooterAction shooterAction;
 
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        shooter = new Shooter(hardwareMap, telemetry,"shooter",true);
+        // 初始化双飞轮系统，根据实际电机名称和反转设置调整
+        shooterAction = new ShooterAction(hardwareMap, telemetry, "left_shooter", "right_shooter", true, false);
         waitForStart();
         while (opModeIsActive()) {
+            // 测试不同速度
             if (gamepad1.aWasPressed()) {
-                shooter.shoot(850);
+                shooterAction.shoot(850); // 高速
             } else if (gamepad1.bWasPressed()) {
-                shooter.shoot(760);
+                shooterAction.shoot(760); // 中高速
             } else if (gamepad1.yWasPressed()) {
-                shooter.shoot(650);
+                shooterAction.shoot(650); // 中速
             } else if (gamepad1.xWasPressed()) {
-                shooter.shoot(0);
+                shooterAction.shoot(500); // 低速
+            } else if (gamepad1.dpad_up) {
+                shooterAction.shoot(0); // 停止
+            } else if (gamepad1.dpad_down) {
+                shooterAction.block(); // 阻塞
             }
-            shooter.setTelemetry();
+            
+            // 遥测数据
+            shooterAction.setTelemetry();
             telemetry.update();
         }
     }

@@ -25,7 +25,7 @@ public class TurretAimTester extends LinearOpMode {
         chassis.ChassisStop();
         chassis.ChassisInit();
 
-        turretAimController = new TurretAimController(hardwareMap, "shootingMotor");
+
         waitForStart();
         isRunning = true;
         chassis.ChassisStop();

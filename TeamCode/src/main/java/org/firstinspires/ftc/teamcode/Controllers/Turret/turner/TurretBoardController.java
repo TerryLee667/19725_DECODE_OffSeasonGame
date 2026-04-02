@@ -2,10 +2,8 @@ package org.firstinspires.ftc.teamcode.Controllers.Turret.turner;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcontroller.external.samples.ConceptScanServo;
 import org.firstinspires.ftc.teamcode.utility.TurretAimingCalculator;
 
 @Config
@@ -87,19 +85,56 @@ public class TurretBoardController {
 //            targetTheta=-boardRotateLimit/2;
 //        }
         //所有目标角应该控制在角度域内，所以不希望用到这几行。
-        Position=((max_pos-min_pos)*(targetTheta+adjust)/boardRotateLimit)+(max_pos+min_pos)/2;
-        //将角度制目标(限制：-90°~90°)转换为舵机内置单位
-        targetPosition=Position;
-        if(Position<=min_pos) {
-            Position=min_pos;
+        // 将角度转换为舵机 position 并应用到舵机上
+        rotateToAngle(targetTheta);
+
+        // 返回当前舵机位置（舵机内置单位）
+        return currentPosition;
+    }
+
+    /**
+     * 将一个角度（度）转换为舵机 position 值（舵机的内置 [min_pos, max_pos] 单位）
+     * 不做越界裁剪，仅计算理论目标 position（与原实现保持一致的映射关系）。
+     * @param targetTheta 目标角度（度）
+     * @return 计算得到的舵机 position（可能超出 [min_pos, max_pos]）
+     */
+    private double computePositionFromAngle(double targetTheta) {
+        return ((max_pos - min_pos) * (targetTheta + adjust) / boardRotateLimit) + (max_pos + min_pos) / 2;
+    }
+
+    /**
+     * 将计算得到的舵机 position 应用到物理舵机，并执行边界裁剪与当前/目标位置更新。
+     * @param positionValue 要设置的舵机 position（可超出边界，内部会裁剪）
+     */
+    private void applyServoPosition(double positionValue) {
+        // 将计算结果写入成员 Position（代表当前尝试的目标 position）
+        Position = positionValue;
+
+        // 边界裁剪
+        if (Position <= min_pos) {
+            Position = min_pos;
         }
-        if(Position>=max_pos) {
-            Position=max_pos;
+        if (Position >= max_pos) {
+            Position = max_pos;
         }
+
+        // 将裁剪后的 position 应用到硬件
         turretServo.setPosition(Position);
-        currentPosition=turretServo.getPosition();
-        // 5. 返回当前舵机目标朝向角
-        return Position;
+
+        // 更新当前读取到的实际位置
+        currentPosition = turretServo.getPosition();
+    }
+
+    /**
+     * 对外的“根据角度旋转舵机”方法：先计算目标 position，保存 targetPosition（未裁剪的理论目标），然后应用到舵机。
+     * @param targetTheta 目标角度（度）
+     */
+    public void rotateToAngle(double targetTheta) {
+        double computed = computePositionFromAngle(targetTheta);
+        // 保存理论目标（裁剪前），保持与原逻辑一致
+        targetPosition = computed;
+        // 应用到舵机（内部会裁剪并更新 currentPosition）
+        applyServoPosition(computed);
     }
     /**
      * 读取当前挡板角度
