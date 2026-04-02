@@ -1,8 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Limelight;
-
-import static org.firstinspires.ftc.teamcode.Controllers.Limelight.Limelight_Calculater.tx;
-import org.firstinspires.ftc.teamcode.Controllers.Limelight.Limelight_Calculater;
-import org.firstinspires.ftc.teamcode.Controllers.Limelight.TurnTester_PID;
+package org.firstinspires.ftc.teamcode.rubbishbin;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;

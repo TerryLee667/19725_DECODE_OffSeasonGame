@@ -16,28 +16,30 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @TeleOp(name = "Limelight_new",group = "Tests")
 public class Limelight_new extends LinearOpMode {
     private Limelight3A limelight;
-//    public Telemetry telemetry;
-//    public double TargetXDegreesmax = 10;
-//    public double TargetXDegreesmin = -10;
+    public DcMotorEx motor;
+
     public double forwardspeed = 30;
     public double reversespeed = -30;
     public double StopSpeed = 0;
-//    public double TargetAngle = 0;
-//    Motor_PID Motor_PID = new Motor_PID();
-//    LLStatus status = limelight.getStatus();
-    public DcMotorEx motor;
 
+    public double maxtx = 1;
+    public double mintx = -1;
+
+    public  boolean isturning = false;
+    public  boolean hasTarget = false;
+
+//    public Telemetry telemetry;
+//    public double TargetXDegreesmax = 10;
+//    public double TargetXDegreesmin = -10;
+//    public double TargetAngle = 0;
 //    public double tx;
 //    public double ty;
 //    public double txnc;
 //    public double tync;
-    public double maxtx = 1;
-    public double mintx = -1;
+//    Motor_PID Motor_PID = new Motor_PID();
+//    LLStatus status = limelight.getStatus();
+//    TurnTester_PID turnTesterPid;
 
-
-    TurnTester_PID turnTesterPid;
-    public  boolean isturning = false;
-    public  boolean hasTarget = false;
     boolean turning(double maxtx, double mintx) {
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()){
@@ -121,7 +123,7 @@ public class Limelight_new extends LinearOpMode {
                     hasTarget = true;
                 }
             } else {
-                hasTarget = false; // No valid data, assume no target
+                hasTarget = false;
             }
             if (gamepad1.yWasPressed()){
                 limelight.start();
@@ -134,9 +136,6 @@ public class Limelight_new extends LinearOpMode {
             }
             telemetry.update();
         }
-
-
-        //
     }
 
 }

@@ -1,8 +1,7 @@
-package org.firstinspires.ftc.teamcode.Controllers.Limelight;
+package org.firstinspires.ftc.teamcode.rubbishbin;
 
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
