@@ -11,7 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.utility.PIDController;
 
-//单个弹射飞轮的PID控制器
+//TODO 这个要重写一遍，等周三考完线下说
 @Config
 public class Shooter {
     //被卡住的速度

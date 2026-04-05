@@ -129,6 +129,7 @@ public class Limelight_new extends LinearOpMode {
             }
             if (gamepad1.yWasPressed()){
                 limelight.start();
+                //TODO:首先，为什么没有目标才转？其次，这样while里套while会卡在这里，不能这样写。
                 while (!hasTarget && opModeIsActive()) {
                     turning(maxtx, mintx);
                     telemetry.update();

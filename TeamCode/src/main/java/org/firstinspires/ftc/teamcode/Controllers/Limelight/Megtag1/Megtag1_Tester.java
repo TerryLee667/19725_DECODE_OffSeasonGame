@@ -60,6 +60,7 @@ public class Megtag1_Tester extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         //初始化
+        //TODO:这样的写法只会访问一次gamepad的状态，无法在循环中更新状态，在while(opModeInInit())调用init函数来解决
         Init();
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
