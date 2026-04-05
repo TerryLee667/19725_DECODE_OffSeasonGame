@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.Controllers.Turret.turner.TurretBoardContr
 public class GearTester extends LinearOpMode {
     TurretBoardController board;
     ShooterAction shooter;
-    HardwareMap hardwareMap;
+
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
