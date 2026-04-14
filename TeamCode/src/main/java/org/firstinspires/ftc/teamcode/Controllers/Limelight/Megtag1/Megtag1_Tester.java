@@ -14,9 +14,21 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+// IMU 相关 (推荐使用 Universal IMU 接口)
+import com.qualcomm.hardware.bosch.BNO055IMU; // 如果你需要使用传统的 BNO055IMU 特定类
+import com.qualcomm.robotcore.hardware.IMU; // 推荐：使用通用 IMU 接口
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+//import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRoll; // 当使用 Universal IMU 接口获取 Yaw/Pitch/Roll 时需要[reference:6]
+
+
+import org.firstinspires.ftc.ftccommon.internal.manualcontrol.responses.ImuAngularVelocityResponse;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.Controllers.Limelight.Limelight_new;
 
 import java.util.List;
@@ -94,16 +106,12 @@ public class Megtag1_Tester extends LinearOpMode {
             if (result != null && result.isValid()) {
                 if (gamepad1.yWasPressed()) {
                     Pose3D botpose = result.getBotpose();
-                    double captureLatency = result.getCaptureLatency();
-                    double targetingLatency = result.getTargetingLatency();
-                    double parseLatency = result.getParseLatency();
-                    telemetry.addData("Botpose", botpose.toString());
-                    telemetry.addData("LL Latency", captureLatency + targetingLatency);
-
-                    List<LLResultTypes.BarcodeResult> barcodeResults = result.getBarcodeResults();
-                    for (LLResultTypes.BarcodeResult br : barcodeResults) {
-                        telemetry.addData("Barcode", "Data: %s", br.getData());
+                    if (botpose != null) {
+                        double x = botpose.getPosition().x;
+                        double y = botpose.getPosition().y;
+                        telemetry.addData("MT1 Location", "(" + x + ", " + y + ")");
                     }
+
                 }
 
             }
