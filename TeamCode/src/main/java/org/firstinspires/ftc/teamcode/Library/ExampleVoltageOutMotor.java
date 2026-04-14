@@ -6,9 +6,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.utility.PIDSVAController;
-import org.firstinspires.ftc.teamcode.utility.SlotConfig;
-import org.firstinspires.ftc.teamcode.utility.VoltageOut;
+import org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers.PIDSVAController;
+import org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers.SlotConfig;
+import org.firstinspires.ftc.teamcode.Controllers.VoltageOut.VoltageOut;
 
 
 @Config

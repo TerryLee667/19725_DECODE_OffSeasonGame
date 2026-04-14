@@ -37,7 +37,7 @@ import java.util.List;
 @TeleOp(name = "Megtag1_Tester", group = "Tests")
 public class Megtag1_Tester extends LinearOpMode {
     private Limelight3A limelight;
-//    private Telemetry telemetry;
+    private Telemetry telemetry;
     public DcMotorEx motor;
 
     LLResult result = limelight.getLatestResult();
@@ -92,7 +92,7 @@ public class Megtag1_Tester extends LinearOpMode {
 
         telemetry.update();
 
-        telemetry.addData(">", "Robot Ready.  Press Play.");
+//        telemetry.addData(">", "Robot Ready.  Press Play.");
         waitForStart();
 
         while (opModeIsActive()) {
