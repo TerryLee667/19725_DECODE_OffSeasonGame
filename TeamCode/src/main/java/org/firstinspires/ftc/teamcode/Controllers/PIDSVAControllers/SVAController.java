@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.utility;
+package org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers;
 
 public class SVAController {
     public SVAController(double kS, double kV, double kA) {

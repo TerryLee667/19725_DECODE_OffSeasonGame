@@ -10,6 +10,7 @@ public class ShooterAction {
     private final Shooter rightShooter;
     
     Telemetry telemetry;
+    private int targetSpeed=0;
     
     //构造函数
     public ShooterAction(HardwareMap hardwareMap, Telemetry telemetryrc, String leftMotorName, String rightMotorName, boolean leftReverse, boolean rightReverse) {
@@ -21,10 +22,17 @@ public class ShooterAction {
     
     /**
      * 控制双飞轮达到目标速度
-     * @param targetSpeed 目标速度
+     * @param targetspeed 目标速度
+     */
+    public void shoot(int targetspeed) {
+        this.targetSpeed=targetspeed;
+    }
+
+    /**
+     * 每一帧必须调用此函数。
      * @return 是否两个飞轮都达到目标速度
      */
-    public boolean shoot(int targetSpeed) {
+    public boolean update(){
         boolean leftReady = leftShooter.shoot(targetSpeed);
         boolean rightReady = rightShooter.shoot(targetSpeed);
         return leftReady && rightReady;
@@ -106,50 +114,5 @@ public class ShooterAction {
         telemetry.addData("Speed Difference", getSpeedDifference());
         telemetry.addData("Synchronized", isSynchronized(10)); // 10度/秒的公差
     }
-    
-    /**
-     * 测试速度准确性
-     * @param targetSpeed 目标速度
-     * @param tolerance 速度公差
-     * @return 是否达到目标速度
-     */
-    public boolean testSpeedAccuracy(int targetSpeed, double tolerance) {
-        shoot(targetSpeed);
-        double leftError = Math.abs(targetSpeed - getLeftSpeed());
-        double rightError = Math.abs(targetSpeed - getRightSpeed());
-        return leftError < tolerance && rightError < tolerance;
-    }
-    
-    /**
-     * 测试同步性
-     * @param targetSpeed 目标速度
-     * @param syncTolerance 同步公差
-     * @param speedTolerance 速度公差
-     * @return 是否同步且达到目标速度
-     */
-    public boolean testSynchronization(int targetSpeed, double syncTolerance, double speedTolerance) {
-        shoot(targetSpeed);
-        return isSynchronized(syncTolerance) && testSpeedAccuracy(targetSpeed, speedTolerance);
-    }
-    
-    /**
-     * 执行速度阶梯测试
-     * @param speeds 速度数组
-     * @param durationMs 每个速度持续时间
-     */
-    public void runSpeedTest(int[] speeds, long durationMs) throws InterruptedException {
-        for (int speed : speeds) {
-            telemetry.addData("Testing Speed", speed);
-            telemetry.update();
-            
-            long startTime = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTime < durationMs) {
-                shoot(speed);
-                setTelemetry();
-                telemetry.update();
-                Thread.sleep(50);
-            }
-        }
-        stop();
-    }
+
 }
