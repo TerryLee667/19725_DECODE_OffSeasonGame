@@ -39,7 +39,7 @@ public class Python_Read extends LinearOpMode {
             if (gamepad1.aWasPressed()) {
                 limelight.start(); // 开始获取数据
 
-                while (result != null && result.isValid()) {
+                if (result != null && result.isValid()) {
                     telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
 
                     // Access detector results
