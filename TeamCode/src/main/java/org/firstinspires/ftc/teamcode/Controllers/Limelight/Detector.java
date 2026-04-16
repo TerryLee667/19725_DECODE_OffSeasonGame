@@ -5,11 +5,14 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Detector {
     private Limelight3A limelight;
+   // public Telemetry telemetry;
 
     private static final int PIPELINE_INDEX = 5; // 使用pipeline5
     
@@ -66,6 +69,9 @@ public class Detector {
         double[][] resultArray = new double[centers.size()][2];
         for (int i = 0; i < centers.size(); i++) {
             resultArray[i] = centers.get(i);
+
+            //telemetry.addData("DT", "A1: %s, A2: %.2f", resultArray[i][0], resultArray[i][1]);
+           // telemetry.update();
         }
         
         return resultArray;
