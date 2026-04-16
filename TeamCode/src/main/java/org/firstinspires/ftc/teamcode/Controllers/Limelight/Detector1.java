@@ -27,6 +27,7 @@ public class Detector1 extends LinearOpMode {
 
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(5); // 切换到 Python 输出管道
+        telemetry.update();
 
         waitForStart();
         while (opModeIsActive()) {
@@ -40,26 +41,32 @@ public class Detector1 extends LinearOpMode {
                     status.getTemp(), status.getCpu(),(int)status.getFps());
             telemetry.addData("Pipeline", "Index: %d, Type: %s",
                     status.getPipelineIndex(), status.getPipelineType());
+            telemetry.update();
 
             if (gamepad1.aWasPressed()) {
                 limelight.start(); // 开始获取数据
 
-                if (result.isValid()) {
+//                if (result.isValid()) {
 //                    telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
 
-                    // Access detector results
-                    List<LLResultTypes.DetectorResult> detectorResults = result.getDetectorResults();
-                    for (LLResultTypes.DetectorResult dr : detectorResults) {
-                        telemetry.addData("Detector", "Class: %s, Area: %.2f,Tx: %.2f", dr.getClassName(), dr.getTargetArea(),dr.getTargetXDegrees());
-                    }
+//                    // Access detector results
+//                    List<LLResultTypes.DetectorResult> detectorResults = result.getDetectorResults();
+//                    for (LLResultTypes.DetectorResult dr : detectorResults) {
+//                        telemetry.addData("Detector", "Class: %s, Area: %.2f,Txp: %.2f", dr.getClassName(), dr.getTargetArea(),dr.getTargetXPixels());
+//                    }
                     telemetry.update();
-                }
+//                }
             } else if (gamepad1.bWasPressed()) {
                 limelight.stop(); // 停止获取数据
-                telemetry.update();
+//                telemetry.update();
+            }
+            // Access detector results
+            List<LLResultTypes.DetectorResult> detectorResults = result.getDetectorResults();
+            for (LLResultTypes.DetectorResult dr : detectorResults) {
+                telemetry.addData("Detector", "Class: %s, Area: %.2f,Txp: %.2f", dr.getClassName(), dr.getTargetArea(),dr.getTargetXPixels());
             }
 
-            telemetry.update();
+//            telemetry.update();
         }
     }
 }
