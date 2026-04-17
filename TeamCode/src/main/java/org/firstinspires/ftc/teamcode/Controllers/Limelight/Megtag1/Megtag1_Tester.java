@@ -40,6 +40,7 @@ public class Megtag1_Tester extends LinearOpMode {
     private Telemetry telemetry;
     public DcMotorEx motor;
 
+    //不要在这里读，limelight对象没有初始化，访问会得到null报错的。记得看黄色警告
     LLResult result = limelight.getLatestResult();
     LLStatus status = limelight.getStatus();
     public enum ROBOT_STATUS {
@@ -72,6 +73,7 @@ public class Megtag1_Tester extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         //初始化
+        //你还是没有改变这个问题，无法切换队伍颜色
         //TODO:这样的写法只会访问一次gamepad的状态，无法在循环中更新状态，在while(opModeInInit())调用init函数来解决
         Init();
         limelight = hardwareMap.get(Limelight3A.class, "limelight");

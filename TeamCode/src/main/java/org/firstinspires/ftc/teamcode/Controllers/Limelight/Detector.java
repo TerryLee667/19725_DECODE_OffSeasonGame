@@ -45,7 +45,7 @@ public class Detector {
                     // 获取像素坐标偏移（相对于画面中心）
                     double txp = dr.getTargetXPixels();
                     double typ = dr.getTargetYPixels();
-
+                  
                     // 归一化到0-1范围（取画面长边为1，假设图像分辨率为640x480）
                     // m对应x方向偏移，n对应y方向偏移
                     double m = -txp / 320.0; // x方向归一化，左侧为正
