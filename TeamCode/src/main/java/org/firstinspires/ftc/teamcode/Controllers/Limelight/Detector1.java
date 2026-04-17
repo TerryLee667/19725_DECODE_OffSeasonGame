@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.List;
+//不要重复起名，避免……1这样的起名，保持类名和OPmode名称的统一，清晰可读
 
 @Config
 @TeleOp(name = "Python_Read", group = "Tests")
