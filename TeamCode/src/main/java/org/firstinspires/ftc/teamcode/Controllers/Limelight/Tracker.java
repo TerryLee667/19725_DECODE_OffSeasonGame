@@ -1,22 +1,33 @@
 package org.firstinspires.ftc.teamcode.Controllers.Limelight;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.teamcode.Vision.projection.Projector;
+import org.firstinspires.ftc.teamcode.Controllers.Limelight.projection.Projector;
 
 import java.util.*;
 
+/**
+ * 目标追踪器，用于跟踪和管理视觉检测到的目标
+ * 实现了目标聚类、延迟确认、稳定坐标计算和最优目标选择功能
+ */
 public class Tracker {
-    private Detector detector;
-    private Projector projector = new Projector(0.9, 0.1);
-    private List<Target> targets;
-    private List<CandidateTarget> candidateTargets;
-    private int nextTargetId;
-    private static int nextMemberId;
-    private Map<Target, Integer> removalPending;
-    private double distanceThreshold;
-    private int confirmationFrames;
-    private int removalFrames;
+    private Detector detector;              // 视觉检测器，用于获取目标中心点
+    private Projector projector = new Projector(0.9, 0.1);  // 坐标投影器，将像素坐标转换为世界坐标
+    private List<Target> targets;           // 已确认的目标列表
+    private List<CandidateTarget> candidateTargets;  // 候选目标列表，尚未达到确认帧数
+    private int nextTargetId;               // 下一个目标ID
+    private static int nextMemberId;        // 下一个成员ID（静态变量，全局唯一）
+    private Map<Target, Integer> removalPending;  // 待移除的目标及其计数
+    private double distanceThreshold;       // 聚类距离阈值，用于判断检测是否属于同一目标
+    private int confirmationFrames;         // 目标确认所需的连续帧数
+    private int removalFrames;              // 目标移除所需的连续缺失帧数
 
+    /**
+     * 构造函数
+     * @param hardwareMap 硬件映射，用于初始化检测器
+     * @param distanceThreshold 聚类距离阈值
+     * @param confirmationFrames 目标确认所需的连续帧数
+     * @param removalFrames 目标移除所需的连续缺失帧数
+     */
     public Tracker(HardwareMap hardwareMap, double distanceThreshold, int confirmationFrames, int removalFrames) {
         this.detector = new Detector(hardwareMap);
         this.targets = new ArrayList<>();
@@ -29,10 +40,22 @@ public class Tracker {
         this.removalFrames = removalFrames;
     }
 
+    /**
+     * 启动追踪器
+     * 启动视觉检测器
+     */
     public void start() {
         detector.start();
     }
 
+    /**
+     * 更新追踪状态
+     * 1. 获取当前检测结果
+     * 2. 对检测结果进行聚类
+     * 3. 匹配并更新已确认的目标
+     * 4. 处理新的候选目标
+     * 5. 处理缺失的目标
+     */
     public void update() {
         List<Detection> currentDetections = getCurrentDetections();
         List<List<Detection>> currentGroups = clusterDetections(currentDetections);
@@ -41,6 +64,11 @@ public class Tracker {
         handleMissingTargets();
     }
 
+    /**
+     * 获取当前检测结果
+     * 从检测器获取紫色和绿色目标的中心点，转换为世界坐标后返回
+     * @return 当前检测到的所有目标
+     */
     private List<Detection> getCurrentDetections() {
         List<Detection> detections = new ArrayList<>();
 
@@ -59,6 +87,13 @@ public class Tracker {
         return detections;
     }
 
+    /**
+     * 对检测结果进行聚类
+     * 使用广度优先搜索(BFS)算法，将距离小于等于 distanceThreshold 的检测归为一组
+     * 单个孤立的检测也会形成大小为 1 的组
+     * @param detections 待聚类的检测结果
+     * @return 聚类后的检测组列表
+     */
     private List<List<Detection>> clusterDetections(List<Detection> detections) {
         List<List<Detection>> groups = new ArrayList<>();
         Set<Detection> processed = new HashSet<>();
@@ -92,6 +127,15 @@ public class Tracker {
         return groups;
     }
 
+    /**
+     * 匹配并更新已确认的目标
+     * 1. 对每个检测组计算中心点
+     * 2. 寻找距离最近的已确认目标
+     * 3. 更新匹配到的目标
+     * 4. 标记未匹配到的目标为缺失
+     * 5. 移除目标中过期的成员
+     * @param currentGroups 当前的检测组列表
+     */
     private void matchAndUpdateTargets(List<List<Detection>> currentGroups) {
         Set<Target> matchedTargets = new HashSet<>();
 
@@ -142,6 +186,16 @@ public class Tracker {
         }
     }
 
+    /**
+     * 处理新的候选目标
+     * 1. 对每个检测组计算中心点
+     * 2. 寻找距离最近的候选目标
+     * 3. 更新匹配到的候选目标
+     * 4. 对连续出现达到 confirmationFrames 的候选目标，将其转换为已确认目标
+     * 5. 对未匹配到的候选目标，增加其缺失计数
+     * 6. 移除连续缺失达到 removalFrames 的候选目标
+     * @param currentGroups 当前的检测组列表
+     */
     private void handleNewCandidates(List<List<Detection>> currentGroups) {
         Set<CandidateTarget> matchedCandidates = new HashSet<>();
         List<CandidateTarget> toRemove = new ArrayList<>();
@@ -201,6 +255,10 @@ public class Tracker {
         candidateTargets.removeAll(toRemoveFinal);
     }
 
+    /**
+     * 处理缺失的目标
+     * 移除连续缺失达到 removalFrames 且没有活跃成员的目标
+     */
     private void handleMissingTargets() {
         List<Target> toRemove = new ArrayList<>();
 
@@ -219,6 +277,12 @@ public class Tracker {
         }
     }
 
+    /**
+     * 获取最优目标
+     * 计算每个目标的得分，返回得分最高的目标
+     * 得分公式：score = activeMemberCount / distanceToCamera
+     * @return 得分最高的目标，若没有目标则返回 null
+     */
     public Target getBestTarget() {
         if (targets.isEmpty()) {
             return null;
@@ -240,6 +304,12 @@ public class Tracker {
         return bestTarget;
     }
 
+    /**
+     * 计算目标得分
+     * 得分公式：score = activeMemberCount / distanceToCamera
+     * @param target 目标对象
+     * @return 目标得分
+     */
     private double computeTargetScore(Target target) {
         int memberCount = target.getActiveMemberCount(confirmationFrames);
         double distance = Math.sqrt(Math.pow(target.centerX, 2) + Math.pow(target.centerY, 2));
@@ -249,29 +319,55 @@ public class Tracker {
         return memberCount / distance;
     }
 
+    /**
+     * 获取已确认的目标列表
+     * @return 已确认的目标列表
+     */
     public List<Target> getTargets() {
         return targets;
     }
 
+    /**
+     * 获取候选目标列表
+     * @return 候选目标列表
+     */
     public List<CandidateTarget> getCandidateTargets() {
         return candidateTargets;
     }
 
+    /**
+     * 停止追踪器
+     * 停止视觉检测器
+     */
     public void stop() {
         detector.stop();
     }
 
+    /**
+     * 检测结果类，表示单个目标的检测信息
+     */
     public static class Detection {
-        public final String color;
-        public final double x;
-        public final double y;
+        public final String color;  // 目标颜色
+        public final double x;      // 目标 x 坐标
+        public final double y;      // 目标 y 坐标
 
+        /**
+         * 构造函数
+         * @param color 目标颜色
+         * @param x 目标 x 坐标
+         * @param y 目标 y 坐标
+         */
         public Detection(String color, double x, double y) {
             this.color = color;
             this.x = x;
             this.y = y;
         }
 
+        /**
+         * 计算与另一个检测结果的距离
+         * @param other 另一个检测结果
+         * @return 距离
+         */
         public double distanceTo(Detection other) {
             return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
         }
@@ -290,13 +386,20 @@ public class Tracker {
         }
     }
 
+    /**
+     * 已确认的目标类，包含多个成员并维护目标的中心点坐标
+     */
     public static class Target {
-        public int id;
-        public Map<Integer, Member> members;
-        public double centerX;
-        public double centerY;
-        public long lastSeenTimestamp;
+        public int id;                      // 目标 ID
+        public Map<Integer, Member> members;  // 目标的成员列表，key 为成员 ID
+        public double centerX;              // 目标中心点 x 坐标
+        public double centerY;              // 目标中心点 y 坐标
+        public long lastSeenTimestamp;      // 最后一次看到目标的时间戳
 
+        /**
+         * 构造函数
+         * @param id 目标 ID
+         */
         public Target(int id) {
             this.id = id;
             this.members = new HashMap<>();
@@ -305,6 +408,11 @@ public class Tracker {
             this.lastSeenTimestamp = System.currentTimeMillis();
         }
 
+        /**
+         * 更新目标的成员和中心点
+         * @param group 检测组
+         * @param confirmationFrames 确认帧数
+         */
         public void updateGroupAndMembers(List<Detection> group, int confirmationFrames) {
             Set<Integer> processedMemberIds = new HashSet<>();
 
@@ -346,11 +454,19 @@ public class Tracker {
             updateCenter(confirmationFrames);
         }
 
+        /**
+         * 使用现有成员更新目标
+         * @param existingMembers 现有成员
+         * @param confirmationFrames 确认帧数
+         */
         public void updateGroupAndMembers(Map<Integer, Member> existingMembers, int confirmationFrames) {
             this.members = new HashMap<>(existingMembers);
             updateCenter(confirmationFrames);
         }
 
+        /**
+         * 标记所有成员为缺失
+         */
         public void markAllMembersMissed() {
             for (Member member : members.values()) {
                 member.consecutiveMisses++;
@@ -358,6 +474,11 @@ public class Tracker {
             }
         }
 
+        /**
+         * 移除过期的成员
+         * @param removalFrames 移除所需的连续缺失帧数
+         * @param confirmationFrames 确认帧数
+         */
         public void removeStaleMembers(int removalFrames, int confirmationFrames) {
             List<Integer> toRemove = new ArrayList<>();
             for (Map.Entry<Integer, Member> entry : members.entrySet()) {
@@ -371,6 +492,11 @@ public class Tracker {
             updateCenter(confirmationFrames);
         }
 
+        /**
+         * 获取活跃成员数量
+         * @param confirmationFrames 确认帧数
+         * @return 活跃成员数量
+         */
         public int getActiveMemberCount(int confirmationFrames) {
             int count = 0;
             for (Member member : members.values()) {
@@ -381,6 +507,11 @@ public class Tracker {
             return count;
         }
 
+        /**
+         * 更新目标中心点
+         * 仅使用连续出现帧数 >= confirmationFrames 的成员坐标计算平均值
+         * @param confirmationFrames 确认帧数
+         */
         public void updateCenter(int confirmationFrames) {
             int activeCount = 0;
             double sumX = 0, sumY = 0;
@@ -401,20 +532,36 @@ public class Tracker {
             }
         }
 
+        /**
+         * 检查目标是否为空
+         * @return 是否为空
+         */
         public boolean isEmpty() {
             return members.isEmpty();
         }
 
+        /**
+         * 获取目标到摄像头的距离
+         * @return 距离
+         */
         public double getDistanceToCamera() {
             return Math.sqrt(Math.pow(centerX, 2) + Math.pow(centerY, 2));
         }
 
+        /**
+         * 目标成员类，表示目标中的单个检测结果
+         */
         public static class Member {
-            public int id;
-            public Detection detection;
-            public int consecutiveFrames;
-            public int consecutiveMisses;
+            public int id;                 // 成员 ID
+            public Detection detection;    // 检测结果
+            public int consecutiveFrames;  // 连续出现帧数
+            public int consecutiveMisses;  // 连续缺失帧数
 
+            /**
+             * 构造函数
+             * @param id 成员 ID
+             * @param detection 检测结果
+             */
             public Member(int id, Detection detection) {
                 this.id = id;
                 this.detection = detection;
@@ -424,14 +571,22 @@ public class Tracker {
         }
     }
 
+    /**
+     * 候选目标类，尚未达到确认帧数的目标
+     */
     public static class CandidateTarget {
-        public Map<Integer, Target.Member> members;
-        public double centerX;
-        public double centerY;
-        public int consecutiveFrames;
-        public int consecutiveMisses;
-        private int nextMemberId;
+        public Map<Integer, Target.Member> members;  // 候选目标的成员列表
+        public double centerX;                      // 候选目标中心点 x 坐标
+        public double centerY;                      // 候选目标中心点 y 坐标
+        public int consecutiveFrames;              // 连续出现帧数
+        public int consecutiveMisses;              // 连续缺失帧数
+        private int nextMemberId;                  // 下一个成员 ID
 
+        /**
+         * 构造函数
+         * @param startMemberId 起始成员 ID
+         * @param group 检测组
+         */
         public CandidateTarget(int startMemberId, List<Detection> group) {
             this.members = new HashMap<>();
             this.nextMemberId = startMemberId;
@@ -444,6 +599,10 @@ public class Tracker {
             updateCenter();
         }
 
+        /**
+         * 更新候选目标的成员和中心点
+         * @param group 检测组
+         */
         public void updateGroupAndMembers(List<Detection> group) {
             Set<Integer> processedMemberIds = new HashSet<>();
 
@@ -485,6 +644,10 @@ public class Tracker {
             updateCenter();
         }
 
+        /**
+         * 更新候选目标中心点
+         * 使用所有成员的坐标计算平均值
+         */
         private void updateCenter() {
             if (members.isEmpty()) {
                 centerX = 0;

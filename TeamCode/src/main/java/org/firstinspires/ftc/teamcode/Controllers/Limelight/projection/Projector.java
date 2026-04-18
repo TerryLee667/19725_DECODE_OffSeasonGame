@@ -3,7 +3,8 @@ package org.firstinspires.ftc.teamcode.Controllers.Limelight.projection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Projector {
+public class
+Projector {
     private static final double rt2 = Math.sqrt(2);
 
     private static final Map<String, Double> CAMERA_PHI_MAP = new HashMap<>();
