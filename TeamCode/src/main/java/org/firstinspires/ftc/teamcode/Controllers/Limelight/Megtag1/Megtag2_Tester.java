@@ -41,6 +41,7 @@ public class Megtag2_Tester extends LinearOpMode {
     IMUSensor imu;
     @Override
     public void runOpMode() throws InterruptedException {
+        //不建议把安装方向传进去，建议在 IMUSensor 内部根据实际安装方向进行调整。这样写冗长，而且这个作为硬件参数，不应该被修改
 
         imu = new IMUSensor(hardwareMap, "imu", new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.RIGHT, RevHubOrientationOnRobot.UsbFacingDirection.UP)); // 根据你的 IMU 安装方向调整参数
 
@@ -73,6 +74,7 @@ public class Megtag2_Tester extends LinearOpMode {
                     double y = botpose_mt2.getPosition().y;
                     telemetry.addData("MT2 Location:", "(" + x + ", " + y + ")");
                     sleep(100); // 添加适当的延迟以避免过快更新
+                    //TODO 检查此时limelight的帧率，LL2和LL1在更新率上是否有差异？
                 }
             }
         }

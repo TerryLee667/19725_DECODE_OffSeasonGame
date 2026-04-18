@@ -16,7 +16,9 @@ public class ShooterAction {
     public ShooterAction(HardwareMap hardwareMap, Telemetry telemetryrc, String leftMotorName, String rightMotorName, boolean leftReverse, boolean rightReverse) {
         this.telemetry = telemetryrc;
         //初始化左右飞轮
+        //TODO 硬件配置（电机名称和反转设置）是确定的，建议写死在controller里，而不是从外部传入
         leftShooter = new Shooter(hardwareMap, telemetryrc, leftMotorName, leftReverse);
+        //TODO 考虑是用两个独立的PID控制器，还是一个用PID计算，另一个直接复制负的功率（如果电机性能一致，后者可能更稳定）
         rightShooter = new Shooter(hardwareMap, telemetryrc, rightMotorName, rightReverse);
     }
     

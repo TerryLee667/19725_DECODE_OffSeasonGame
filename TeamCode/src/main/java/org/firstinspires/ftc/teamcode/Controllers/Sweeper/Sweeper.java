@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 @Config
 public class Sweeper {
+    //TODO 改成速度闭环/基于电压输出的开环
     public DcMotorEx motor;
     public static int EatVel = 1960;
     public static int GiveTheArtifactVel = 1960;
