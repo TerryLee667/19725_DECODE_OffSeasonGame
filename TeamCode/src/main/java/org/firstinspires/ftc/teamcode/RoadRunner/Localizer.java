@@ -16,7 +16,8 @@ public interface Localizer {
     /**
      * 设置机器人的当前位姿
      * 通常在初始化时或需要重置定位时调用
-     * 
+     *
+     *
      * @param pose 要设置的位姿，包含 x、y 坐标和朝向角度
      */
     void setPose(Pose2d pose);

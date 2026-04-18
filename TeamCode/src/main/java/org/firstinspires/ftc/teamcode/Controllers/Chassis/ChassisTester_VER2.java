@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.RoadRunner.Drawing;
 
 @Config
-@TeleOp(name = "ChassisTester", group = "Tests")
+@TeleOp(name = "ChassisTester2", group = "Tests")
 public class ChassisTester_VER2 extends LinearOpMode {
     long lastNanoTime=0;
     @Override
@@ -35,7 +35,6 @@ public class ChassisTester_VER2 extends LinearOpMode {
             telemetry.addData("r-power",rotate);
             telemetry.addData("NoHeadModeStartError:",chassis.noHeadModeStartError);
             telemetry.addData("NoHeadMode",chassis.getUseNoHeadMode()?"NoHead":"Manual");
-            telemetry.addData("RunMode",chassis.runningToPoint?"RUNNING_TO_POINT":"MANUAL");//chassis.isTargetPointReached()
             telemetry.addData("Position", RobotPosition_ver1.getInstance().getPose().toString());
             telemetry.update();
             lastNanoTime = System.nanoTime();

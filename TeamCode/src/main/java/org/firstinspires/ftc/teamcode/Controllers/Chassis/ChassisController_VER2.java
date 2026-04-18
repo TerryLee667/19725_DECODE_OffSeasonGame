@@ -27,11 +27,9 @@ public class ChassisController_VER2 {
     HardwareMap hardwareMap;
     MecanumDrive drive;
     boolean useNoHeadMode=false;
-    public boolean runningToPoint=false;
 //    boolean autoLockHeading=true;
     boolean HeadingLockRadianReset=true;
     double HeadingLockRadian;
-    public double getHeadingLockRadian(){return HeadingLockRadian;}
     public double noHeadModeStartError;
 
 
@@ -47,27 +45,11 @@ public class ChassisController_VER2 {
         vx=vx*PARAMS.maxV;
         vy=vy*PARAMS.maxV;
         omega=omega*PARAMS.maxOmega;
-        if(!runningToPoint) {
-//            if(autoLockHeading){
-//                if(omega!=0){
-//                    HeadingLockRadianReset=true;
-//                }else{
-//                    if(HeadingLockRadianReset){
-//                        HeadingLockRadianReset=false;
-//                        firstRunRadian=true;
-//                        HeadingLockRadian=robotPosition.getHeading();
-//                    }
-//                    if(Math.abs(robotPosition.getHeading()-HeadingLockRadian)<= PARAMS.zeroThresholdOmega) {
-//                        pidRadianHeadLock.reset();
-//                    }
-//                    omega=calculatePIDRadian(HeadingLockRadian,robotPosition.getHeading());
-//                }
-//            }
-            if (useNoHeadMode)
-                solveGround(vx, vy, omega, RobotPosition_ver1.getInstance().getHeading()-noHeadModeStartError);
-            else
-                solveChassis(vx, vy, omega);
-        }
+        if (useNoHeadMode)
+            solveGround(vx, vy, omega, RobotPosition_ver1.getInstance().getHeading()-noHeadModeStartError);
+        else
+            solveChassis(vx, vy, omega);
+
     }
     public void exchangeNoHeadMode(){
         useNoHeadMode=!useNoHeadMode;
@@ -93,8 +75,6 @@ public class ChassisController_VER2 {
 
 
     /**
-     *
-     *
      * @param vx    机器人相对于自身的横移速度 (m/s) —— +右
      * @param vy    机器人相对于自身的前进速度 (m/s) —— +前
      * @param omega 机器人旋转角速度 (rad/s) —— +逆时针
@@ -107,6 +87,7 @@ public class ChassisController_VER2 {
     }
 
     /**
+
      * 逆运动学公式（地面坐标系）
      * @param vx 机器人相对于地面的横移速度 (m/s) —— +右
      * @param vy 机器人相对于地面的前进速度 (m/s) —— +前
@@ -119,11 +100,6 @@ public class ChassisController_VER2 {
         double vyPro = -vx * Math.sin(headingRadian) + vy * Math.cos(headingRadian);
         solveChassis(vxPro, vyPro, omega);
     }
-    public void solveGround(double[] vxy,double vOmega,double headingRadian){
-        solveGround(vxy[0],vxy[1],vOmega,headingRadian);
-    }
-
-
     long lastTimeRadian = 0;
     boolean firstRunRadian = true;
 
