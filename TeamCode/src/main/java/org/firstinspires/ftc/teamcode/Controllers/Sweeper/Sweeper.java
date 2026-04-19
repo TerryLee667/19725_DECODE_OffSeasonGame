@@ -4,24 +4,34 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 @Config
 public class Sweeper {
     //TODO 改成速度闭环/基于电压输出的开环
     public DcMotorEx motor;
+
+    private Telemetry telemetry;
+    
+
     public static int EatVel = 1960;
     public static int GiveTheArtifactVel = 1960;
     public static int OutputVel = -960;
-
-    public static int ForR=0;
-
-    /**
-     *
-     * @param hardwareMap 你抄一遍吧。
-     */
-    public Sweeper(HardwareMap hardwareMap){
+    
+    private int targetVelocity = 0;
+    
+    public static int ForR = 0;
+    
+    public Sweeper(HardwareMap hardwareMap, Telemetry telemetry) {
+        this.telemetry = telemetry;
         this.motor = hardwareMap.get(DcMotorEx.class, "sweeperMotor");
-        switch(ForR){
+        setDirection();
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+    }
+    
+    private void setDirection() {
+        switch(ForR) {
             case 0:
                 motor.setDirection(DcMotor.Direction.REVERSE);
                 break;
@@ -29,63 +39,51 @@ public class Sweeper {
                 motor.setDirection(DcMotor.Direction.FORWARD);
                 break;
         }
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
-
-    /**
-     *
-     * @param power double -1.0~1.0
-     *
-     * @return void
-     */
-    public void Eat(double power){
+    
+    public void setEat() {
+        targetVelocity = EatVel;
+    }
+    
+    public void setGiveArtifact() {
+        targetVelocity = GiveTheArtifactVel;
+    }
+    
+    public void setOutput() {
+        targetVelocity = OutputVel;
+    }
+    
+    public void setStop() {
+        targetVelocity = 0;
+    }
+    
+    public void setPower(double power) {
         motor.setPower(power);
     }
-
-    /**
-     * 这玩意按设定功率行动
-     */
-    public void Eat(){
-        motor.setVelocity(EatVel);
+    
+    public void update() {
+        motor.setVelocity(targetVelocity);
     }
-
-    /**
-     * 吐球 power看调参
-     */
-    public void GiveArtifact(){
-        motor.setPower(GiveTheArtifactVel);
-    }
-
-    /**
-     * 停止
-     */
-    public void stop(){motor.setVelocity(0);}
-    /**
-     * 吐出
-     */
-    public void output(){motor.setVelocity(OutputVel);}
-    /**
-     *
-     * @return 当前电机功率
-     */
-    public double getPower(){
+    
+    public double getPower() {
         return motor.getPower();
     }
-    /**
-     *
-     * @return 当前电机速度
-     */
-    public double getVel(){return motor.getVelocity();}
-    /**
-     * @return  0为reverse；1为forward
-     */
-    public int getFR(){return ForR;}
-    /**
-     *
-     * @return 当前电机电流
-     */
-    public double getCurrent(){return motor.getCurrent(CurrentUnit.AMPS);}
-
-
-
+    
+    public double getVel() {
+        return motor.getVelocity();
+    }
+    
+    public int getFR() {
+        return ForR;
+    }
+    
+    public double getCurrent() {
+        return motor.getCurrent(CurrentUnit.AMPS);
+    }
+    
+    public void setTelemetry() {
+        telemetry.addData("Sweeper Velocity", getVel());
+        telemetry.addData("Sweeper Power", getPower());
+        telemetry.addData("Sweeper Current", getCurrent());
+    }
 }
