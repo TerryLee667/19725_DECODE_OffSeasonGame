@@ -35,7 +35,7 @@ public class TrajectorySimulator {
                                                       robotVx, robotVy, params);
 
         double targetZ = params.deltaH;
-        double prevZ = state.z;
+        ProjectileState prevState = state.copy();
 
         int maxSteps = (int) (MAX_FLIGHT_TIME / dt);
 
@@ -43,11 +43,11 @@ public class TrajectorySimulator {
             state = rk4Step(state, params);
             state.time += dt;
 
-            if (state.z >= targetZ && prevZ < targetZ) {
-                double tFraction = (targetZ - prevZ) / (state.z - prevZ);
-                double interpolatedX = state.x - (state.x - prevZ) * (1 - tFraction);
-                double interpolatedY = state.y - (state.y - prevZ) * (1 - tFraction);
-                double interpolatedTime = state.time - dt + dt * (1 - tFraction);
+            if (state.z >= targetZ && prevState.z < targetZ) {
+                double tFraction = (targetZ - prevState.z) / (state.z - prevState.z);
+                double interpolatedX = prevState.x + (state.x - prevState.x) * tFraction;
+                double interpolatedY = prevState.y + (state.y - prevState.y) * tFraction;
+                double interpolatedTime = prevState.time + dt * tFraction;
 
                 return new TrajectoryResult(
                     interpolatedX,
@@ -60,7 +60,7 @@ public class TrajectorySimulator {
                 );
             }
 
-            prevZ = state.z;
+            prevState = state.copy();
 
             if (state.z < targetZ - 0.5) {
                 break;
