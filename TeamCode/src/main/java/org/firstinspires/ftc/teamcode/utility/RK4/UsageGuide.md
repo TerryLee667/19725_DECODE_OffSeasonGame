@@ -310,6 +310,7 @@ System.out.println("拟合误差: " + result.totalError);
 Solver solver = new Solver();
 
 // 2. 设置物理参数（使用标定结果）
+// 2.1 基本用法：单参数配置
 ProjectileParameters params = new ProjectileParameters();
 params.v0 = 6.0;    // 已标定的初速度
 params.k = 0.015;   // 已标定的阻力系数
@@ -357,6 +358,7 @@ if (result.success) {
 Solver solver = new Solver();
 
 // 2. 设置物理参数（使用标定结果）
+// 2.1 基本用法：单参数配置
 ProjectileParameters params = new ProjectileParameters();
 params.v0 = 6.0;    // 已标定的初速度
 params.k = 0.015;   // 已标定的阻力系数
@@ -549,17 +551,68 @@ Solver.SolverResult lastResult = null;
 double lastTargetX, lastTargetY;
 double lastRobotVx, lastRobotVy;
 
-// 仅在状态变化时重新计算
-if (Math.abs(targetX - lastTargetX) > 0.1 || 
-    Math.abs(targetY - lastTargetY) > 0.1 ||
-    Math.abs(robotVx - lastRobotVx) > 0.1 ||
-    Math.abs(robotVy - lastRobotVy) > 0.1) {
-    lastResult = solver.solve(targetX, targetY, robot, target);
-    lastTargetX = targetX;
-    lastTargetY = targetY;
-    lastRobotVx = robotVx;
-    lastRobotVy = robotVy;
+// 在主循环中使用缓存
+while (opModeIsActive()) {
+    double targetX = getTargetX();
+    double targetY = getTargetY();
+    double robotVx = getRobotVx();
+    double robotVy = getRobotVy();
+    
+    // 检查状态是否变化不大
+    if (lastResult != null &&
+        Math.abs(targetX - lastTargetX) < 0.1 &&
+        Math.abs(targetY - lastTargetY) < 0.1 &&
+        Math.abs(robotVx - lastRobotVx) < 0.1 &&
+        Math.abs(robotVy - lastRobotVy) < 0.1) {
+        // 使用缓存结果
+        useSolverResult(lastResult);
+    } else {
+        // 重新求解
+        Solver.SolverResult result = solver.solve(targetX, targetY, robotVx, robotVy);
+        lastResult = result;
+        lastTargetX = targetX;
+        lastTargetY = targetY;
+        lastRobotVx = robotVx;
+        lastRobotVy = robotVy;
+        useSolverResult(result);
+    }
 }
+```
+
+### 3.4 多参数配置
+
+**功能**：支持管理和切换多种参数配置，适应不同的发射条件。
+
+**代码示例**：
+```java
+// 创建不同参数集
+ProjectileParameters normalParams = new ProjectileParameters(6.0, 0.015, 2.0, 0.1, 0.5, Math.PI / 4);
+ProjectileParameters highPowerParams = new ProjectileParameters(7.0, 0.018, 2.0, 0.1, 0.5, Math.PI / 3);
+ProjectileParameters lowPowerParams = new ProjectileParameters(5.0, 0.012, 2.0, 0.1, 0.5, Math.PI / 4);
+
+// 添加参数集到求解器
+solver.addParameterSet("normal", normalParams);
+solver.addParameterSet("highPower", highPowerParams);
+solver.addParameterSet("lowPower", lowPowerParams);
+
+// 切换参数集
+solver.switchParameterSet("highPower");
+System.out.println("当前参数集: " + solver.getCurrentParameterSetName());
+
+// 获取当前参数
+ProjectileParameters currentParams = solver.getCurrentParameters();
+```
+
+**使用场景**：
+- 不同天气条件（温度、湿度影响空气阻力）
+- 不同场地（室内/室外）
+- 不同小球类型（重量、表面材质）
+- 不同发射模式（高功率/低功率）
+
+**最佳实践**：
+- 为每种常见场景创建独立的参数集
+- 在比赛前根据实际条件选择合适的参数集
+- 使用参数标定工具为每种场景生成准确的参数
 ```
 
 ## 4. 常见问题与解决方案

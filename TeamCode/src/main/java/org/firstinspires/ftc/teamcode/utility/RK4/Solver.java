@@ -1,9 +1,14 @@
 package org.firstinspires.ftc.teamcode.utility.RK4;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Solver {
 
     private TrajectorySimulator simulator;
     private ProjectileParameters params;
+    private Map<String, ProjectileParameters> parameterSets;
+    private String currentParameterSet;
 
     private int maxOuterIterations;
     private double phiTolerance;
@@ -13,6 +18,9 @@ public class Solver {
     public Solver() {
         this.simulator = new TrajectorySimulator();
         this.params = new ProjectileParameters();
+        this.parameterSets = new HashMap<>();
+        this.parameterSets.put("default", params);
+        this.currentParameterSet = "default";
         this.maxOuterIterations = 5;
         this.phiTolerance = Math.toRadians(0.5);
         this.maxBinarySearchIterations = 15;
@@ -22,6 +30,9 @@ public class Solver {
     public Solver(ProjectileParameters params) {
         this.simulator = new TrajectorySimulator();
         this.params = params;
+        this.parameterSets = new HashMap<>();
+        this.parameterSets.put("default", params);
+        this.currentParameterSet = "default";
         this.maxOuterIterations = 5;
         this.phiTolerance = Math.toRadians(0.5);
         this.maxBinarySearchIterations = 15;
@@ -30,6 +41,30 @@ public class Solver {
 
     public void setParameters(ProjectileParameters params) {
         this.params = params;
+        this.parameterSets.put(currentParameterSet, params);
+    }
+    
+    public void addParameterSet(String name, ProjectileParameters params) {
+        this.parameterSets.put(name, params);
+    }
+    
+    public void switchParameterSet(String name) {
+        if (parameterSets.containsKey(name)) {
+            this.params = parameterSets.get(name);
+            this.currentParameterSet = name;
+        }
+    }
+    
+    public ProjectileParameters getParameterSet(String name) {
+        return parameterSets.get(name);
+    }
+    
+    public ProjectileParameters getCurrentParameters() {
+        return params;
+    }
+    
+    public String getCurrentParameterSetName() {
+        return currentParameterSet;
     }
 
     public void setMaxOuterIterations(int max) {
