@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.utility;
 
-import com.acmerobotics.dashboard.config.Config;
 
 /**
  * 机器人炮台瞄准计算工具类
@@ -9,7 +8,7 @@ import com.acmerobotics.dashboard.config.Config;
  * 角度单位：所有输入/输出均为【度】，内部自动转换为弧度计算
  * 旋转角规则：输出delta_theta∈[-180°,180°]，正=顺时针旋转，负=逆时针旋转（最短路径）
  */
-@Config
+
 public class TurretAimingCalculator {
     // 内置目标位置（世界坐标系，x/y）
     private double targetX;
