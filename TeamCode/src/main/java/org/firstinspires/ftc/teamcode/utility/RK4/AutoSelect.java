@@ -22,7 +22,7 @@ public class AutoSelect {
         this.v0Min = 2.0;
         this.v0Max = 15.0;
         this.thetaMin = 0;
-        this.thetaMax = Math.PI / 4;
+        this.thetaMax = Math.toRadians(55);
         
         // 初始化最优初速度列表和最优仰角列表
         initializeOptimalLists();
@@ -36,7 +36,7 @@ public class AutoSelect {
         this.v0Min = 2.0;
         this.v0Max = 15.0;
         this.thetaMin = 0;
-        this.thetaMax = Math.PI / 4;
+        this.thetaMax = Math.toRadians(55);
         
         // 初始化最优初速度列表和最优仰角列表
         initializeOptimalLists();
@@ -50,12 +50,15 @@ public class AutoSelect {
         optimalV0List.add(8.5);
         optimalV0List.add(6.5);
         
-        // 最优仰角列表（弧度）：根据实际测试结果调整
+        // 最优仰角列表（弧度）：根据实际测试结果调整，范围 0-55 度
         optimalThetaList.add(Math.toRadians(30)); // 首选仰角 30 度
         optimalThetaList.add(Math.toRadians(25));
         optimalThetaList.add(Math.toRadians(35));
         optimalThetaList.add(Math.toRadians(20));
         optimalThetaList.add(Math.toRadians(40));
+        optimalThetaList.add(Math.toRadians(45));
+        optimalThetaList.add(Math.toRadians(50));
+        optimalThetaList.add(Math.toRadians(55));
     }
 
     public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, String mode) {
@@ -97,6 +100,12 @@ public class AutoSelect {
 
     private AutoSelectResult selectByOptimalTheta(double relativeX, double relativeY, double robotVx, double robotVy) {
         for (double theta : optimalThetaList) {
+            // 检查仰角是否在 Vel 模式范围内（0-55度）
+            double[] velModeThetaRange = solver.getVelModeThetaRange();
+            if (theta < velModeThetaRange[0] || theta > velModeThetaRange[1]) {
+                continue; // 跳过不在范围内的仰角
+            }
+            
             Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy, theta, "Vel");
             if (result.success) {
                 double v0 = result.v0;
