@@ -32,18 +32,10 @@ public class ParameterCalculator {
 
     public CalculationResult calculateFromCSV(String basePath) {
         try {
-            // 读取初速度标定数据
-            List<Double> rangeData = readRangeData(basePath + "/velocity_calibration.csv");
-            double averageRange = calculateAverage(rangeData);
-            
-            // 计算初速度
-            double v0 = calibrator.calibrateV0(averageRange, params.deltaH, params);
-            params.v0 = v0;
-            
             // 读取阻力参数标定数据
             double[][] rangeAngleData = readRangeAngleData(basePath + "/drag_calibration.csv");
             
-            // 拟合阻力参数
+            // 拟合阻力参数（使用手动设置的初速度）
             CalibrationHelper.CalibrationData dragResult = calibrator.fitDragParameters(rangeAngleData, params);
             
             // 更新参数
@@ -51,18 +43,18 @@ public class ParameterCalculator {
             params.n = dragResult.n;
             
             return new CalculationResult(
-                v0,
+                params.v0,
                 dragResult.k,
                 dragResult.n,
                 dragResult.totalError,
-                rangeData.size(),
+                0, // 不再使用初速度标定数据
                 rangeAngleData.length,
                 true,
                 "Successfully calculated parameters from CSV files"
             );
         } catch (Exception e) {
             return new CalculationResult(
-                0,
+                params.v0,
                 0,
                 0,
                 Double.MAX_VALUE,
@@ -72,43 +64,6 @@ public class ParameterCalculator {
                 "Error: " + e.getMessage()
             );
         }
-    }
-
-    private List<Double> readRangeData(String filePath) throws IOException {
-        List<Double> rangeData = new ArrayList<>();
-        Path path = Paths.get(filePath);
-        
-        if (!Files.exists(path)) {
-            throw new IOException("File not found: " + filePath);
-        }
-        
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            boolean isHeader = true;
-            
-            while ((line = br.readLine()) != null) {
-                if (isHeader) {
-                    isHeader = false;
-                    continue;
-                }
-                
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    try {
-                        double range = Double.parseDouble(line);
-                        rangeData.add(range);
-                    } catch (NumberFormatException e) {
-                        // 跳过无效数据
-                    }
-                }
-            }
-        }
-        
-        if (rangeData.isEmpty()) {
-            throw new IOException("No valid range data found in file: " + filePath);
-        }
-        
-        return rangeData;
     }
 
     private double[][] readRangeAngleData(String filePath) throws IOException {
@@ -155,19 +110,6 @@ public class ParameterCalculator {
         }
         
         return result;
-    }
-
-    private double calculateAverage(List<Double> values) {
-        if (values.isEmpty()) {
-            return 0;
-        }
-        
-        double sum = 0;
-        for (double value : values) {
-            sum += value;
-        }
-        
-        return sum / values.size();
     }
 
     public ProjectileParameters getParameters() {
@@ -240,8 +182,9 @@ public class ParameterCalculator {
         String basePath = args[0];
         ParameterCalculator calculator = new ParameterCalculator();
         
-        // 设置基本参数
+        // 设置基本参数（包括手动设置的初速度）
         ProjectileParameters params = new ProjectileParameters();
+        params.v0 = 7.5;     // 手动设置的初速度（米/秒）
         params.deltaH = 0.2; // 炮口高度（米）
         params.m = 0.1;      // 小球质量（公斤）
         calculator.setParameters(params);
@@ -252,7 +195,7 @@ public class ParameterCalculator {
         if (result.success) {
             // 保存参数到配置文件
             System.out.println("\nRecommended parameters for ProjectileParameters:");
-            System.out.println("params.v0 = " + result.v0 + ";");
+            System.out.println("params.v0 = " + result.v0 + "; // 手动设置的初速度");
             System.out.println("params.k = " + result.k + ";");
             System.out.println("params.n = " + result.n + ";");
         }

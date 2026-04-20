@@ -14,36 +14,7 @@ public class CalibrationHelper {
         this.simulator = new TrajectorySimulator();
     }
 
-    public double calibrateV0(double measuredRange, double height, ProjectileParameters params) {
-        double low = 1.0;
-        double high = 15.0;
-        double tolerance = 0.01;
 
-        for (int i = 0; i < 30; i++) {
-            double mid = (low + high) / 2;
-
-            TrajectorySimulator.TrajectoryResult result = simulator.simulate(
-                0, 0,
-                0, 0, 0,
-                0, 0,
-                new ProjectileParameters(mid, params.k, params.n, params.m, params.deltaH, params.thetaMax)
-            );
-
-            double simRange = result.getHorizontalDistance();
-
-            if (Math.abs(simRange - measuredRange) < tolerance) {
-                return mid;
-            }
-
-            if (simRange < measuredRange) {
-                low = mid;
-            } else {
-                high = mid;
-            }
-        }
-
-        return (low + high) / 2;
-    }
 
     public CalibrationData fitDragParameters(double[][] rangeAngleData,
                                               ProjectileParameters params) {

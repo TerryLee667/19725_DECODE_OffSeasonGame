@@ -25,6 +25,7 @@ public class ParameterCalibrationApp {
         
         // 设置基本参数
         ProjectileParameters params = new ProjectileParameters();
+        params.v0 = getDoubleInput(scanner, "请输入初速度 (米/秒) [默认: 7.5]: ", 7.5);
         params.deltaH = getDoubleInput(scanner, "请输入炮口高度 (米) [默认: 0.2]: ", 0.2);
         params.m = getDoubleInput(scanner, "请输入小球质量 (公斤) [默认: 0.1]: ", 0.1);
         calculator.setParameters(params);
@@ -38,19 +39,18 @@ public class ParameterCalibrationApp {
         System.out.println();
         System.out.println("===== 标定结果 =====");
         if (result.success) {
-            System.out.printf("初速度 (v0): %.3f m/s\n", result.v0);
+            System.out.printf("初速度 (v0): %.3f m/s (手动设置)\n", result.v0);
             System.out.printf("阻力系数 (k): %.6f\n", result.k);
             System.out.printf("速度指数 (n): %.3f\n", result.n);
             System.out.printf("拟合总误差: %.6f\n", result.totalError);
             System.out.printf("均方根误差: %.6f\n", result.getRmse());
-            System.out.printf("初速度数据点: %d\n", result.velocityDataPoints);
             System.out.printf("阻力参数数据点: %d\n", result.dragDataPoints);
             System.out.println("状态: 成功");
             
             System.out.println();
             System.out.println("===== 推荐代码 =====");
             System.out.println("// 在比赛代码中使用以下参数:");
-            System.out.printf("params.v0 = %.3f;\n", result.v0);
+            System.out.printf("params.v0 = %.3f; // 手动设置的初速度\n", result.v0);
             System.out.printf("params.k = %.6f;\n", result.k);
             System.out.printf("params.n = %.3f;\n", result.n);
         } else {

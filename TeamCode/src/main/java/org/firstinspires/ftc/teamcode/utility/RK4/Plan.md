@@ -235,4 +235,97 @@ z_p(t_f) = z_r + \Delta h
 3. **安全边界**：若算法求得的仰角超出物理限制（\(\theta > \theta_{\max}\)），说明目标超出射程，应放弃发射或驱车靠近。
 4. **阻力模型切换**：若实验发现通孔球的阻力更接近线性关系，可将 \(n\) 固定为 1.0，仅拟合 \(k\)，此时方程简化，计算更快。
 
-***
+### 核心修改：从“仰角二分”变为“初速度二分”
+
+原算法结构为：
+- 外层迭代调整水平朝向 \(\phi\)；
+- 内层对仰角 \(\theta\) 进行二分搜索，找到能命中目标水平距离的仰角。
+
+新场景下：
+- 仰角 \(\theta\) 为已知固定值（如 \(30^\circ\)）；
+- 炮塔发射初速度 \(v_0\) 成为待求变量；
+- 内层改为对 \(v_0\) 进行二分搜索，在合理范围内（如 \(2\,\text{m/s} \sim 15\,\text{m/s}\)）寻找能使小球落点匹配预测目标位置的速度值。
+
+---
+
+### 算法适配步骤
+
+1. **设定初速度搜索范围**  
+   根据炮塔电机的性能（最低启动转速对应的初速 \(v_{\text{min}}\) 和最大安全初速 \(v_{\text{max}}\)）确定二分边界。
+
+2. **外层迭代不变**  
+   仍然迭代求解水平朝向 \(\phi\)，每次迭代中调用内层二分法计算对应的 \(v_0\)。
+
+3. **内层二分法目标函数**  
+   对于候选 \(v_0\)，调用 RK4 仿真（包含小车速度叠加与空气阻力），得到飞行时间 \(t_f\) 和落点水平位置，计算与预测目标位置的误差。  
+   若落点距离小于目标距离，则需增大 \(v_0\)；反之减小 \(v_0\)。
+
+4. **可达性判断**  
+   若内层二分收敛到边界值仍无法满足精度要求，说明当前目标在固定仰角下无法命中（可能太近或太远），此时可选择放弃射击或输出最接近的可行速度。
+
+---
+
+### Java 代码修改示例
+
+原方法签名修改为：
+
+```java
+public double findMuzzleVelocity(double fixedTheta, double phiTurret,
+                                 double robotVx, double robotVy,
+                                 double targetRelX, double targetRelY,
+                                 double targetVx, double targetVy,
+                                 DragParameters drag) {
+    double vMin = 2.0;   // 最小初速度 m/s
+    double vMax = 15.0;  // 最大初速度 m/s
+    double tolerance = 0.05; // 速度容差 m/s
+
+    while (vMax - vMin > tolerance) {
+        double vMid = (vMin + vMax) / 2;
+        ProjectileState result = simulateTrajectory(vMid, fixedTheta, phiTurret,
+                                                    robotVx, robotVy, drag);
+        double tf = result.t;
+        double predTargetX = targetRelX + targetVx * tf;
+        double predTargetY = targetRelY + targetVy * tf;
+        double error = Math.hypot(result.x - predTargetX, result.y - predTargetY);
+
+        // 根据落点相对目标的远近调整 v0
+        // 注意：在固定仰角下，初速度越大射程越远（单调递增）
+        if (Math.hypot(result.x, result.y) < Math.hypot(predTargetX, predTargetY)) {
+            vMin = vMid;
+        } else {
+            vMax = vMid;
+        }
+    }
+    return (vMin + vMax) / 2;
+}
+```
+
+外层迭代逻辑保持不变，只需将 `findElevationWithRobotSpeed` 替换为 `findMuzzleVelocity` 并传入固定仰角。
+
+---
+
+### 算力评估
+
+- **内层二分迭代次数**：速度范围 \(13\,\text{m/s}\)，容差 \(0.05\,\text{m/s}\)，约需 \(\log_2(13/0.05) \approx 8\) 次迭代。
+- **外层迭代次数**：通常 \(3\sim 5\) 次收敛。
+- **单次 RK4 仿真步数**：飞行时间约 \(0.5\sim 1.0\) 秒，步长 \(0.01\) 秒，约 \(50\sim 100\) 步。
+
+总计算量 **显著低于原仰角搜索版本**（因速度搜索范围更窄，迭代次数更少），**Control Hub 完全可实时运行**。
+
+---
+
+### 注意事项
+
+1. **速度边界安全**：实际控制炮塔电机时，需将计算出的 \(v_0\) 映射为电机功率或转速，并确保不超过硬件极限。
+2. **近距离目标**：若目标距离很近，二分法可能收敛至 \(v_{\text{min}}\) 仍射程过远，此时可考虑提前退出并返回最小速度（并接受可能打高）。
+3. **空气阻力参数的依赖性**：初速度变化时，空气阻力对弹道的影响程度会改变，因此之前通过实验标定的阻力参数 \(k\) 和 \(n\) 在可变初速场景下依然有效。
+
+---
+
+## 7. 自动模式实现
+在AutoSelect.java中实现Select函数，输入double relativeX, double relativeY, double robotVx, double robotVy, mode，返回仰角和初速度
+初始化时，设定k,n,初速度范围，仰角范围，最优初速度列表和最优仰角列表
+若mode="V" 则为最优初速度模式，选择最优初速度列表中的第一个值作为初速度，解得对应仰角，若仰角超出范围则改用列表的下一个值，依次类推，直到找到一个仰角在范围内，返回初速度和仰角。若全部查找完后都无解，则返回失败。
+若mode="Y" 则为最优仰角模式，选择最优仰角列表中的第一个值作为仰角，解得对应初速度，若初速度超出范围则改用列表的下一个值，依次类推，直到找到一个初速度在范围内，返回初速度和仰角。若全部查找完后都无解，则返回失败。
+若mode="Pv"，先用最优初速度模式，若失败再用最优仰角模式，若仍失败则返回失败
+若mode="Py"，先用最优仰角模式，若失败再用最优初速度模式，若仍失败则返回失败

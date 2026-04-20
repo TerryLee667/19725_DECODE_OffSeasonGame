@@ -157,11 +157,9 @@ RK4 跑打算法由以下核心组件组成：
 #### 准备工作
 
 1. **采集实验数据**：
-   - 水平平射数据：发射小球，测量落地点到炮口的水平距离，重复 5-10 次
    - 阻力参数数据：在不同距离设置靶标，调整仰角直到命中，记录 `(距离, 仰角)` 数据对
 
 2. **准备 CSV 文件**：
-   - `velocity_calibration.csv`：每行一个水平距离数据
    - `drag_calibration.csv`：每行两个数据点，格式为 `距离, 仰角（度）`
 
 #### 运行标定程序
@@ -178,6 +176,7 @@ java -cp "./out;./TeamCode/src/main/java" org.firstinspires.ftc.teamcode.utility
 
 程序会提示输入：
 - RK4 目录路径（包含 CSV 文件的目录）
+- 初速度（米/秒）
 - 炮口高度（米）
 - 小球质量（公斤）
 
@@ -187,55 +186,46 @@ java -cp "./out;./TeamCode/src/main/java" org.firstinspires.ftc.teamcode.utility
 ```
 =====================================
 ===== 标定结果 =====
-初速度 (v0): 6.250 m/s
+初速度 (v0): 7.500 m/s (手动设置)
 阻力系数 (k): 0.012500
 速度指数 (n): 1.950
 拟合总误差: 0.001234
 均方根误差: 0.015811
-初速度数据点: 5
 阻力参数数据点: 5
 状态: 成功
 
 ===== 推荐代码 =====
-params.v0 = 6.250;
+params.v0 = 7.500; // 手动设置的初速度
 params.k = 0.012500;
 params.n = 1.950;
 =====================================
 ```
 
-### 2.2 手动标定
+### 2.2 手动设置初速度
 
-如果无法使用应用程序，可以手动进行参数标定。
+如果无法使用应用程序，可以手动设置初速度。
 
-**目的**：测定小球离开炮口时的初速度。
+**目的**：设置小球离开炮口时的初速度。
 
 **步骤**：
 
-1. **准备工作**：
-   - 将机器人静置在平整地面
-   - 炮塔水平固定（仰角 θ = 0°）
-   - 测量炮口离地高度 H（例如 0.2m）
+1. **确定初速度**：
+   - 通过制造商提供的规格
+   - 或通过简单的测试估计
+   - 或使用之前的经验值
 
-2. **数据采集**：
-   - 发射小球，测量首次落地点到炮口垂足的水平距离 R
-   - 重复 5-10 次，计算平均值 `averageRange`
-
-3. **代码实现**：
+2. **代码实现**：
 
 ```java
-// 创建标定辅助类
-CalibrationHelper calibrator = new CalibrationHelper();
-
 // 创建默认参数
 ProjectileParameters params = new ProjectileParameters();
+
+// 手动设置初速度
+params.v0 = 7.5; // 初速度（米/秒）
 params.deltaH = 0.2; // 炮口高度
 
-// 标定初速度
-double measuredRange = 2.5; // 实际测量的水平距离（米）
-double v0 = calibrator.calibrateV0(measuredRange, params.deltaH, params);
-
 // 输出结果
-System.out.println("标定得到的初速度: " + v0 + " m/s");
+System.out.println("手动设置的初速度: " + params.v0 + " m/s");
 ```
 
 ### 2.4 阻力参数 k 和 n 测定
@@ -324,8 +314,12 @@ solver.setParameters(params);
 RobotState robot = new RobotState(0, 0, 0.5, 0.3); // (x,y,vx,vy)
 TargetPredictor.TargetState target = new TargetPredictor.TargetState(3, 2, 0, 0.5); // (x,y,vx,vy)
 
-// 4. 求解
+// 4. 求解 - 使用默认初速度
 Solver.SolverResult result = solver.solve(target.x, target.y, robot, target);
+
+// 4. 求解 - 指定初速度（新功能）
+double customV0 = 7.5; // 自定义初速度
+Solver.SolverResult resultWithCustomV0 = solver.solve(target.x, target.y, robot, target, customV0);
 
 // 5. 处理结果
 if (result.success) {
@@ -487,8 +481,18 @@ public void runOpMode() {
         double robotVx = getRobotVelocityX(); // 小车在 x 方向的速度
         double robotVy = getRobotVelocityY(); // 小车在 y 方向的速度
         
-        // 3. 直接求解（目标静止，速度为 0）
+        // 3. 直接求解（目标静止，速度为 0）- 使用默认初速度
         Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy);
+        
+        // 3. 直接求解 - 指定初速度（新功能）
+        double customV0 = 7.5; // 自定义初速度
+        Solver.SolverResult resultWithCustomV0 = solver.solve(relativeX, relativeY, robotVx, robotVy, customV0);
+        
+        // 4. 直接求解 - 指定固定仰角，计算所需初速度（新功能）
+        double fixedTheta = Math.toRadians(30); // 固定仰角 30 度
+        Solver.SolverResult resultWithFixedTheta = solver.solve(relativeX, relativeY, robotVx, robotVy, fixedTheta, "Vel");
+        System.out.println("固定仰角: " + resultWithFixedTheta.getThetaDegrees() + "度"); // 显示固定仰角
+        System.out.println("所需初速度: " + resultWithFixedTheta.getV0() + " m/s"); // 显示计算出的初速度
         
         // 4. 控制炮塔
         if (result.success) {
@@ -613,6 +617,44 @@ ProjectileParameters currentParams = solver.getCurrentParameters();
 - 为每种常见场景创建独立的参数集
 - 在比赛前根据实际条件选择合适的参数集
 - 使用参数标定工具为每种场景生成准确的参数
+
+### 3.5 模式相关范围设置
+
+**功能**：设置 Yaw 模式和 Vel 模式下的仰角范围，以及初速度范围。
+
+**默认范围**：
+- Yaw 模式（由初速度求仰角）：仰角范围 0-45 度
+- Vel 模式（由仰角求初速度）：仰角范围 0-55 度
+- 初速度范围：2.0-15.0 m/s
+
+**代码示例**：
+```java
+// 创建求解器
+Solver solver = new Solver();
+
+// 自定义 Yaw 模式仰角范围（例如 0-40 度）
+solver.setYawModeThetaRange(0, Math.toRadians(40));
+
+// 自定义 Vel 模式仰角范围（例如 0-60 度）
+solver.setVelModeThetaRange(0, Math.toRadians(60));
+
+// 自定义初速度范围（例如 3.0-12.0 m/s）
+solver.setV0Range(3.0, 12.0);
+
+// 获取当前范围设置
+double[] yawRange = solver.getYawModeThetaRange();
+double[] velRange = solver.getVelModeThetaRange();
+double[] v0Range = solver.getV0Range();
+
+System.out.println("Yaw 模式仰角范围: " + Math.toDegrees(yawRange[0]) + "-" + Math.toDegrees(yawRange[1]) + " 度");
+System.out.println("Vel 模式仰角范围: " + Math.toDegrees(velRange[0]) + "-" + Math.toDegrees(velRange[1]) + " 度");
+System.out.println("初速度范围: " + v0Range[0] + "-" + v0Range[1] + " m/s");
+```
+
+**使用建议**：
+- 根据硬件能力设置合理的仰角范围，避免超出机械极限
+- 根据发射系统的实际能力设置初速度范围
+- 在不同场景下调整范围以获得最佳性能
 ```
 
 ## 4. 常见问题与解决方案
@@ -623,44 +665,90 @@ ProjectileParameters currentParams = solver.getCurrentParameters();
 | 命中率低 | 阻力参数不准确 | 重新标定阻力参数 k 和 n |
 | 实时性差 | 计算开销大 | 优化求解器参数，减少迭代次数 |
 | 角度抖动 | 目标位置数据噪声 | 对视觉数据进行低通滤波 |
-| 侧向偏差 | 机器人速度测量不准 | 校准机器人速度传感器 |
-| 落点偏差大 | 轨迹插值计算错误 | 已修复：插值时应使用上一状态的位置坐标而非高度坐标 |
 
-## 5. 代码示例
+## 5. 自动模式选择
 
-### 5.1 完整的参数标定示例
+### 5.1 AutoSelect 类
+
+`AutoSelect` 类提供了自动选择最优初速度和仰角的功能，支持多种模式：
+
+- **V 模式**：使用最优初速度列表，找到对应的仰角
+- **Y 模式**：使用最优仰角列表，找到对应的初速度
+- **Pv 模式**：优先使用 V 模式，失败后使用 Y 模式
+- **Py 模式**：优先使用 Y 模式，失败后使用 V 模式
+
+### 5.2 使用示例
 
 ```java
-public class CalibrationOpMode extends LinearOpMode {
-    @Override
-    public void runOpMode() {
-        telemetry.addLine("准备进行参数标定");
-        telemetry.update();
-        
-        waitForStart();
-        
-        // 1. 标定初速度
-        CalibrationHelper calibrator = new CalibrationHelper();
-        ProjectileParameters params = new ProjectileParameters();
-        
-        double measuredRange = 2.8; // 实际测量的水平距离
-        double v0 = calibrator.calibrateV0(measuredRange, params.deltaH, params);
-        
-        telemetry.addData("初速度 v0", v0);
-        telemetry.update();
-        sleep(2000);
-        
-        // 2. 拟合阻力参数
-        double[][] rangeAngleData = {
-            {1.5, Math.toRadians(12)},
-            {2.0, Math.toRadians(17)},
-            {2.5, Math.toRadians(22)},
-            {3.0, Math.toRadians(28)},
-            {3.5, Math.toRadians(35)}
-        };
-        
-        params.v0 = v0;
-        CalibrationHelper.CalibrationData dragResult = calibrator.fitDragParameters(rangeAngleData, params);
+// 1. 创建 AutoSelect 实例
+AutoSelect autoSelect = new AutoSelect();
+
+// 2. 准备输入数据
+double relativeX = 3.0; // 目标相对 x 坐标
+double relativeY = 2.0; // 目标相对 y 坐标
+double robotVx = 0.5;   // 小车 x 方向速度
+double robotVy = 0.3;   // 小车 y 方向速度
+
+// 3. 选择模式并求解
+// V 模式：使用最优初速度列表
+AutoSelect.AutoSelectResult resultV = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "V");
+
+// Y 模式：使用最优仰角列表
+AutoSelect.AutoSelectResult resultY = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "Y");
+
+// Pv 模式：优先 V 模式，失败后使用 Y 模式
+AutoSelect.AutoSelectResult resultPv = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "Pv");
+
+// Py 模式：优先 Y 模式，失败后使用 V 模式
+AutoSelect.AutoSelectResult resultPy = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "Py");
+
+// 4. 处理结果
+if (resultV.success) {
+    System.out.println("V 模式成功:");
+    System.out.println("  仰角: " + resultV.getThetaDegrees() + "度");
+    System.out.println("  初速度: " + resultV.v0 + " m/s");
+}
+
+if (resultY.success) {
+    System.out.println("Y 模式成功:");
+    System.out.println("  仰角: " + resultY.getThetaDegrees() + "度");
+    System.out.println("  初速度: " + resultY.v0 + " m/s");
+}
+```
+
+### 5.3 自定义配置
+
+```java
+// 自定义最优初速度列表
+List<Double> customV0List = Arrays.asList(7.0, 7.5, 8.0, 8.5, 9.0);
+autoSelect.setOptimalV0List(customV0List);
+
+// 自定义最优仰角列表（弧度）
+List<Double> customThetaList = Arrays.asList(
+    Math.toRadians(25),
+    Math.toRadians(30),
+    Math.toRadians(35)
+);
+autoSelect.setOptimalThetaList(customThetaList);
+
+// 自定义初速度范围
+autoSelect.setV0Range(3.0, 12.0); // 最小 3.0 m/s，最大 12.0 m/s
+
+// 自定义仰角范围（弧度）
+autoSelect.setThetaRange(Math.toRadians(15), Math.toRadians(40)); // 15-40 度
+```
+
+### 5.4 注意事项
+
+1. **最优列表调整**：根据实际测试结果调整 `optimalV0List` 和 `optimalThetaList`，选择最稳定的初速度和仰角组合。
+
+2. **范围设置**：根据硬件能力设置合理的初速度和仰角范围，避免超出硬件极限。
+
+3. **模式选择**：
+   - 当需要稳定的初速度时，使用 V 模式
+   - 当需要固定的仰角时，使用 Y 模式
+   - 当需要更高的成功率时，使用 Pv 或 Py 模式
+
         
         telemetry.addData("阻力系数 k", dragResult.k);
         telemetry.addData("速度指数 n", dragResult.n);
