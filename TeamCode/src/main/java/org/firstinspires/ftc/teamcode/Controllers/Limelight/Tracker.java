@@ -13,7 +13,7 @@ import java.util.*;
 @Config
 public class Tracker {
     private Detector detector;              // 视觉检测器，用于获取目标中心点
-    private Projector projector = new Projector(0.9, 0.1);  // 坐标投影器，将像素坐标转换为世界坐标
+    private Projector projector = new Projector(1.887, 0.2);  // 坐标投影器，将像素坐标转换为世界坐标
     private List<Target> targets;           // 已确认的目标列表
     private List<CandidateTarget> candidateTargets;  // 候选目标列表，尚未达到确认帧数
     private int nextTargetId;               // 下一个目标ID
