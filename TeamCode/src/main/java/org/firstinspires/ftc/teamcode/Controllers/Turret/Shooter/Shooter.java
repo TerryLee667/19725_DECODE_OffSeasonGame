@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers.PIDController;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers.PIDController;
 
 //TODO 这个要重写一遍，等周三考完线下说
 //     417补充 已经讲解过PIDSVAController了，飞轮一定要用这个，尽快重构吧

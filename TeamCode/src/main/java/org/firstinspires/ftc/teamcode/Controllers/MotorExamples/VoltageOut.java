@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.VoltageOut;
+package org.firstinspires.ftc.teamcode.Controllers.MotorExamples;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Library;
+package org.firstinspires.ftc.teamcode.Controllers.MotorExamples;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -6,9 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers.PIDSVAController;
-import org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers.SlotConfig;
-import org.firstinspires.ftc.teamcode.Controllers.VoltageOut.VoltageOut;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers.PIDSVAController;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers.SlotConfig;
 
 
 /**
@@ -16,7 +15,7 @@ import org.firstinspires.ftc.teamcode.Controllers.VoltageOut.VoltageOut;
  * 结合 PIDSVAController 实现高精度速度控制
  */
 @Config
-public class ExampleVoltageOutMotor {
+public class VoltageOutMotor {
     // Dashboard 热调参参数
     /** 比例系数 */
     public static double kP = 0.0;
@@ -58,7 +57,7 @@ public class ExampleVoltageOutMotor {
      * @param motorName 电机名称
      * @param telemetry 遥测实例
      */
-    public ExampleVoltageOutMotor(HardwareMap hardwareMap, String motorName, Telemetry telemetry) {
+    public VoltageOutMotor(HardwareMap hardwareMap, String motorName, Telemetry telemetry) {
         // 获取电机实例
         this.motor = hardwareMap.get(DcMotorEx.class, motorName);
 

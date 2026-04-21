@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Library;
+package org.firstinspires.ftc.teamcode.Controllers.MotorExamples;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -22,7 +22,7 @@ public class ExampleVelPIDSVAMotor extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         
         // 创建ExampleVoltageOutMotor实例，控制名为"SVA"的电机
-        ExampleVoltageOutMotor flywheel = new ExampleVoltageOutMotor(hardwareMap, "SVA", telemetry);
+        VoltageOutMotor flywheel = new VoltageOutMotor(hardwareMap, "SVA", telemetry);
         
         waitForStart();
         

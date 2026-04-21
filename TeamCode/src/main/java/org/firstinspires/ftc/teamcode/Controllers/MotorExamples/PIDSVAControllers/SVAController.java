@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers;
+package org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers;
 
 /**
  * SVAController类实现了SVA（静态摩擦、速度、加速度）前馈控制器

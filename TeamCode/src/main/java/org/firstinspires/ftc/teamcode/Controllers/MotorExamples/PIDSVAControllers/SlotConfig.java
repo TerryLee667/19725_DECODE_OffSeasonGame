@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers;
+package org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers;
 
 /**
  * SlotConfig类用于配置PID和SVA控制器的参数

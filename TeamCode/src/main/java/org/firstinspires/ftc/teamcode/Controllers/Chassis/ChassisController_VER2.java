@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utility.MathSolver;
-import org.firstinspires.ftc.teamcode.Controllers.PIDSVAControllers.PIDController;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers.PIDController;
 
 public class ChassisController_VER2 {
     public static class Params{

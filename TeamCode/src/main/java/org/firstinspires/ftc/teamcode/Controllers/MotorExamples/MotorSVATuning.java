@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Library;
+package org.firstinspires.ftc.teamcode.Controllers.MotorExamples;
 
 import android.os.Environment;
 
@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-import org.firstinspires.ftc.teamcode.Controllers.VoltageOut.VoltageOut;
 import org.firstinspires.ftc.teamcode.utility.Line;
 import org.firstinspires.ftc.teamcode.utility.MathSolver;
 import org.firstinspires.ftc.teamcode.utility.Point2D;
