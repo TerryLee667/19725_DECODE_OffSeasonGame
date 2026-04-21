@@ -75,7 +75,7 @@ public class CalibrationHelper {
     private double calculateFitError(double[][] rangeAngleData, double k, double n, double m) {
         double totalError = 0;
         // 我们的实验数据是不同初速度下的45度仰角射程
-        double[] v0Values = {10, 12, 14, 16, 18, 20, 22, 24, 26, 28};
+        double[] v0Values = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
         double[][] generatedData = generateV0RangeData(v0Values, k, n, m);
 
         for (int i = 0; i < rangeAngleData.length && i < generatedData.length; i++) {

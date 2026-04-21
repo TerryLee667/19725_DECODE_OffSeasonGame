@@ -39,6 +39,9 @@ public class TrajectorySimulator {
 
         int maxSteps = (int) (MAX_FLIGHT_TIME / dt);
 
+        boolean hasPassedTargetUp = false;  // 是否已经第一次经过目标高度（上升阶段）
+        double firstPassX = 0, firstPassY = 0, firstPassTime = 0;  // 第一次经过的数据
+
         for (int i = 0; i < maxSteps; i++) {
             state = rk4Step(state, params);
             state.time += dt;
@@ -50,15 +53,24 @@ public class TrajectorySimulator {
                 double interpolatedY = prevState.y + (state.y - prevState.y) * tFraction;
                 double interpolatedTime = prevState.time + dt * tFraction;
 
-                return new TrajectoryResult(
-                    interpolatedX,
-                    interpolatedY,
-                    targetZ,
-                    interpolatedTime,
-                    true,
-                    theta,
-                    turretPhi
-                );
+                if (!hasPassedTargetUp) {
+                    // 第一次经过目标高度（上升阶段），记录但不返回
+                    firstPassX = interpolatedX;
+                    firstPassY = interpolatedY;
+                    firstPassTime = interpolatedTime;
+                    hasPassedTargetUp = true;
+                } else {
+                    // 第二次经过目标高度（下落阶段），返回
+                    return new TrajectoryResult(
+                        interpolatedX,
+                        interpolatedY,
+                        targetZ,
+                        interpolatedTime,
+                        true,
+                        theta,
+                        turretPhi
+                    );
+                }
             }
 
             prevState = state.copy();
@@ -68,6 +80,7 @@ public class TrajectorySimulator {
             }
         }
 
+        // 如果没有第二次经过目标高度，返回最后一次状态
         return new TrajectoryResult(
             state.x,
             state.y,

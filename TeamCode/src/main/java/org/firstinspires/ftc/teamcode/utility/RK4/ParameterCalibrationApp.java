@@ -19,14 +19,12 @@ public class ParameterCalibrationApp {
         System.out.println();
         
         Scanner scanner = new Scanner(System.in);
-        String rk4Path = getRK4Path(scanner);
-        
         ParameterCalculator calculator = new ParameterCalculator();
         
         // 设置基本参数
         ProjectileParameters params = new ProjectileParameters();
-        params.v0 = getDoubleInput(scanner, "请输入初速度 (米/秒) [默认: 15.0]: ", 15.0);
-        params.deltaH = getDoubleInput(scanner, "请输入炮口高度 (米) [默认: 0.2]: ", 0.2);
+        params.v0 = getDoubleInput(scanner, "请输入初速度 (米/秒) [默认: 10.0]: ", 10.0);
+        params.deltaH = getDoubleInput(scanner, "请输入炮口与目标高度差 (米) [默认: 0.0]: ", 0.0);
         params.m = getDoubleInput(scanner, "请输入小球质量 (公斤) [默认: 0.1]: ", 0.1);
         calculator.setParameters(params);
         
@@ -34,7 +32,8 @@ public class ParameterCalibrationApp {
         System.out.println("正在计算参数...");
         System.out.println("=====================================");
         
-        ParameterCalculator.CalculationResult result = calculator.calculateFromCSV(rk4Path);
+        String basePath = ".";
+        ParameterCalculator.CalculationResult result = calculator.calculateFromCSV(basePath + "/drag_calibration.csv");
         
         System.out.println();
         System.out.println("===== 标定结果 =====");

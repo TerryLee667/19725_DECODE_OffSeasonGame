@@ -19,19 +19,19 @@ public class TestRK4 {
         // 生成随机的 k, n 参数（使用更合理的范围，确保小球可以飞到3m）
         public ProjectileParameters generateRandomParameters() {
             ProjectileParameters params = new ProjectileParameters();
-            params.v0 = 20; // 增大初速度，确保小球可以飞到更远的距离
+            params.v0 = 10; // 使用10m/s初速度进行测试
             // 使用固定参数进行测试，便于调试
             params.k = 0.0005;  // 显著减小k值，减小空气阻力
             params.n = 2.0;   // 固定n值
-            params.m = 0.1;
-            params.deltaH = 0; // 目标高度与炮口高度相同
+            params.m = 0.06;
+            params.deltaH = 1; // 目标高度与炮口高度相同
             return params;
         }
 
-        // 生成实验数据：使用不同的初速度和仰角
+        // 生成实验数据：使用不同的初速度和仰角（收集数据时deltaH=0）
         public double[][] generateExperimentData(ProjectileParameters params, int numPoints) {
             double[][] data = new double[numPoints][2];
-            double[] v0Values = {10, 12, 14, 16, 18, 20, 22, 24, 26, 28};
+            double[] v0Values = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
             
             for (int i = 0; i < numPoints; i++) {
                 // 使用不同的初速度
@@ -41,7 +41,7 @@ public class TestRK4 {
                 tempParams.k = params.k;
                 tempParams.n = params.n;
                 tempParams.m = params.m;
-                tempParams.deltaH = params.deltaH;
+                tempParams.deltaH = 0; // 收集数据时deltaH=0
                 
                 // 计算45度仰角时的射程
                 TrajectorySimulator.TrajectoryResult result = trajectorySimulator.simulate(
@@ -237,7 +237,7 @@ public class TestRK4 {
             System.out.println();
 
             // 4. 写入实验数据到 CSV 文件
-            String csvPath = "drag_calibration.csv";
+            String csvPath = "c:\\Users\\terry\\Documents\\trae_projects\\blue_power\\RK4\\org\\firstinspires\\ftc\\teamcode\\utility\\RK4\\drag_calibration.csv";
             writeExperimentDataToCSV(experimentData, csvPath);
             System.out.println("实验数据已写入: " + csvPath);
             System.out.println();
@@ -250,7 +250,7 @@ public class TestRK4 {
             fitParams.m = trueParams.m;
             calculator.setParameters(fitParams);
 
-            String basePath = ".";
+            String basePath = "c:\\Users\\terry\\Documents\\trae_projects\\blue_power\\RK4\\org\\firstinspires\\ftc\\teamcode\\utility\\RK4";
             ParameterCalculator.CalculationResult fitResult = calculator.calculateFromCSV(basePath);
 
             System.out.println("拟合结果:");
@@ -298,7 +298,7 @@ public class TestRK4 {
             Random random = new Random();
 
             // 生成随机目标位置和小车速度
-            double targetX = 2.0 + random.nextDouble() * 2.0; // 2-4 米
+            double targetX = 4.0 + random.nextDouble() * 2.0; // 4-6 米，均值5米
             double targetY = -1.0 + random.nextDouble() * 2.0; // -1 到 1 米
             double robotVx = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
             double robotVy = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
@@ -314,6 +314,7 @@ public class TestRK4 {
             if (vResult.success) {
                 System.out.printf("仰角: %.2f 度\n", vResult.getThetaDegrees());
                 System.out.printf("初速度: %.2f m/s\n", vResult.v0);
+                System.out.printf("旋转角: %.2f 度\n", vResult.getTurretPhiDegrees());
             } else {
                 System.out.println("V 模式失败: " + vResult.message);
             }
@@ -325,8 +326,65 @@ public class TestRK4 {
             if (yResult.success) {
                 System.out.printf("仰角: %.2f 度\n", yResult.getThetaDegrees());
                 System.out.printf("初速度: %.2f m/s\n", yResult.v0);
+                System.out.printf("旋转角: %.2f 度\n", yResult.getTurretPhiDegrees());
             } else {
                 System.out.println("Y 模式失败: " + yResult.message);
+            }
+            System.out.println();
+
+            // 测试新的V模式（SelectWithInitialV0）：从初始初速度开始微调
+            double initialV0 = 10.0; // 初始初速度
+            AutoSelect.AutoSelectResult vResultWithInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialV0, "V");
+            System.out.println("新的V模式测试（SelectWithInitialV0）:");
+            System.out.printf("初始初速度: %.2f m/s\n", initialV0);
+            if (vResultWithInitial.success) {
+                System.out.printf("成功! 仰角: %.2f 度, 最终初速度: %.2f m/s, 旋转角: %.2f 度\n", 
+                    vResultWithInitial.getThetaDegrees(), vResultWithInitial.v0, vResultWithInitial.getTurretPhiDegrees());
+                System.out.println("消息: " + vResultWithInitial.message);
+            } else {
+                System.out.println("失败: " + vResultWithInitial.message);
+            }
+            System.out.println();
+
+            // 测试新的Y模式（SelectWithInitialTheta）：从初始仰角开始微调
+            double initialTheta = Math.toRadians(30); // 初始仰角（30度）
+            AutoSelect.AutoSelectResult yResultWithInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialTheta, "Y");
+            System.out.println("新的Y模式测试（SelectWithInitialTheta）:");
+            System.out.printf("初始仰角: %.2f 度\n", Math.toDegrees(initialTheta));
+            if (yResultWithInitial.success) {
+                System.out.printf("成功! 仰角: %.2f 度, 初速度: %.2f m/s, 旋转角: %.2f 度\n", 
+                    yResultWithInitial.getThetaDegrees(), yResultWithInitial.v0, yResultWithInitial.getTurretPhiDegrees());
+                System.out.println("消息: " + yResultWithInitial.message);
+            } else {
+                System.out.println("失败: " + yResultWithInitial.message);
+            }
+            System.out.println();
+
+            // 测试新的V模式，使用一个不可行的初始初速度，验证微调机制
+            double badInitialV0 = 5.0; // 过小的初始初速度
+            AutoSelect.AutoSelectResult vResultBadInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, badInitialV0, "V");
+            System.out.println("新的V模式测试（不可行初始值）:");
+            System.out.printf("初始初速度: %.2f m/s（过小）\n", badInitialV0);
+            if (vResultBadInitial.success) {
+                System.out.printf("成功! 仰角: %.2f 度, 最终初速度: %.2f m/s, 旋转角: %.2f 度\n", 
+                    vResultBadInitial.getThetaDegrees(), vResultBadInitial.v0, vResultBadInitial.getTurretPhiDegrees());
+                System.out.println("消息: " + vResultBadInitial.message);
+            } else {
+                System.out.println("失败（预期）: " + vResultBadInitial.message);
+            }
+            System.out.println();
+
+            // 测试新的Y模式，使用一个不可行的初始仰角，验证微调机制
+            double badInitialTheta = Math.toRadians(5); // 过小的初始仰角
+            AutoSelect.AutoSelectResult yResultBadInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, badInitialTheta, "Y");
+            System.out.println("新的Y模式测试（不可行初始值）:");
+            System.out.printf("初始仰角: %.2f 度（过小）\n", Math.toDegrees(badInitialTheta));
+            if (yResultBadInitial.success) {
+                System.out.printf("成功! 仰角: %.2f 度, 初速度: %.2f m/s, 旋转角: %.2f 度\n", 
+                    yResultBadInitial.getThetaDegrees(), yResultBadInitial.v0, yResultBadInitial.getTurretPhiDegrees());
+                System.out.println("消息: " + yResultBadInitial.message);
+            } else {
+                System.out.println("失败（预期）: " + yResultBadInitial.message);
             }
             System.out.println();
 
@@ -339,7 +397,7 @@ public class TestRK4 {
                 vParams.v0 = vResult.v0;
 
                 TrajectorySimulator.TrajectoryResult vLanding = simulator.simulateLanding(
-                    Math.atan2(targetY, targetX), vResult.theta,
+                    vResult.turretPhi, vResult.theta,
                     0, 0, robotVx, robotVy, vParams
                 );
 
@@ -352,9 +410,8 @@ public class TestRK4 {
             if (yResult.success) {
                 ProjectileParameters yParams = fitParams.copy();
                 yParams.v0 = yResult.v0;
-
                 TrajectorySimulator.TrajectoryResult yLanding = simulator.simulateLanding(
-                    Math.atan2(targetY, targetX), yResult.theta,
+                    yResult.turretPhi, yResult.theta,
                     0, 0, robotVx, robotVy, yParams
                 );
 

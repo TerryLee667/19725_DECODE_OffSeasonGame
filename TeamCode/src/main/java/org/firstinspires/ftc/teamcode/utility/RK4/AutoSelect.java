@@ -15,12 +15,13 @@ public class AutoSelect {
     private double thetaMax;
 
     public AutoSelect() {
-        this.solver = new Solver();
         this.params = new ProjectileParameters();
+        this.params.thetaMax = Math.toRadians(55); // 设置最大仰角为55度
+        this.solver = new Solver(this.params);
         this.optimalV0List = new ArrayList<>();
         this.optimalThetaList = new ArrayList<>();
         this.v0Min = 2.0;
-        this.v0Max = 25.0; // 增大最大初速度
+        this.v0Max = 23.0; // 最大初速度    
         this.thetaMin = 0;
         this.thetaMax = Math.toRadians(55);
         
@@ -29,12 +30,13 @@ public class AutoSelect {
     }
 
     public AutoSelect(ProjectileParameters params) {
+        params.thetaMax = Math.toRadians(55); // 确保最大仰角为55度
         this.solver = new Solver(params);
         this.params = params;
         this.optimalV0List = new ArrayList<>();
         this.optimalThetaList = new ArrayList<>();
         this.v0Min = 2.0;
-        this.v0Max = 25.0; // 增大最大初速度
+        this.v0Max = 23.0; // 最大初速度
         this.thetaMin = 0;
         this.thetaMax = Math.toRadians(55);
         
@@ -42,13 +44,14 @@ public class AutoSelect {
         initializeOptimalLists();
     }
 
-    private void initializeOptimalLists() {
-        // 最优初速度列表：根据实际测试结果调整
+        private void initializeOptimalLists() {
+        // 最优初速度列表：根据实际测试结果调整，最大值23
         optimalV0List.add(15.0); // 首选初速度
         optimalV0List.add(18.0);
-        optimalV0List.add(20.0);
+        optimalV0List.add(10.0);
         optimalV0List.add(12.0);
         optimalV0List.add(22.0);
+        optimalV0List.add(23.0);
         
         // 最优仰角列表（弧度）：根据实际测试结果调整，范围 0-55 度
         optimalThetaList.add(Math.toRadians(30)); // 首选仰角 30 度
@@ -64,10 +67,8 @@ public class AutoSelect {
     public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, String mode) {
         switch (mode) {
             case "V":
-                // 原来的V模式，用于Pv内部调用
                 return selectByOptimalV0(relativeX, relativeY, robotVx, robotVy);
             case "Y":
-                // 原来的Y模式，用于Py内部调用
                 return selectByOptimalTheta(relativeX, relativeY, robotVx, robotVy);
             case "Pv":
                 AutoSelectResult resultV = selectByOptimalV0(relativeX, relativeY, robotVx, robotVy);
@@ -82,17 +83,26 @@ public class AutoSelect {
                 }
                 return selectByOptimalV0(relativeX, relativeY, robotVx, robotVy);
             default:
-                return new AutoSelectResult(0, 0, false, "Invalid mode");
+                return new AutoSelectResult(0, 0, 0, false, "Invalid mode");
         }
     }
     
-    // 新的V模式：接受初始初速度，尝试并微调
-    public AutoSelectResult SelectWithInitialV0(double relativeX, double relativeY, double robotVx, double robotVy, double initialV0) {
+    public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, double initialValue, String mode) {
+        switch (mode) {
+            case "V":
+                return selectByInitialV0(relativeX, relativeY, robotVx, robotVy, initialValue);
+            case "Y":
+                return selectByInitialTheta(relativeX, relativeY, robotVx, robotVy, initialValue);
+            default:
+                return new AutoSelectResult(0, 0, 0, false, "Invalid mode");
+        }
+    }
+    
+    private AutoSelectResult SelectWithInitialV0(double relativeX, double relativeY, double robotVx, double robotVy, double initialV0) {
         return selectByInitialV0(relativeX, relativeY, robotVx, robotVy, initialV0);
     }
     
-    // 新的Y模式：接受初始仰角，尝试并微调
-    public AutoSelectResult SelectWithInitialTheta(double relativeX, double relativeY, double robotVx, double robotVy, double initialTheta) {
+    private AutoSelectResult SelectWithInitialTheta(double relativeX, double relativeY, double robotVx, double robotVy, double initialTheta) {
         return selectByInitialTheta(relativeX, relativeY, robotVx, robotVy, initialTheta);
     }
 
@@ -101,13 +111,14 @@ public class AutoSelect {
             Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy, v0);
             if (result.success) {
                 double theta = result.theta;
+                double turretPhi = result.turretPhi;
                 double[] yawModeThetaRange = solver.getYawModeThetaRange();
                 if (theta >= yawModeThetaRange[0] && theta <= yawModeThetaRange[1]) {
-                    return new AutoSelectResult(theta, v0, true, "Success");
+                    return new AutoSelectResult(theta, v0, turretPhi, true, "Success");
                 }
             }
         }
-        return new AutoSelectResult(0, 0, false, "No valid v0 found");
+        return new AutoSelectResult(0, 0, 0, false, "No valid v0 found");
     }
 
     private AutoSelectResult selectByOptimalTheta(double relativeX, double relativeY, double robotVx, double robotVy) {
@@ -121,12 +132,13 @@ public class AutoSelect {
             Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy, theta, "Vel");
             if (result.success) {
                 double v0 = result.v0;
+                double turretPhi = result.turretPhi;
                 if (v0 >= v0Min && v0 <= v0Max) {
-                    return new AutoSelectResult(theta, v0, true, "Success");
+                    return new AutoSelectResult(theta, v0, turretPhi, true, "Success");
                 }
             }
         }
-        return new AutoSelectResult(0, 0, false, "No valid theta found");
+        return new AutoSelectResult(0, 0, 0, false, "No valid theta found");
     }
     
     // 新的V模式实现：接受初始初速度，尝试并微调
@@ -135,18 +147,27 @@ public class AutoSelect {
         Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy, initialV0);
         if (result.success) {
             double theta = result.theta;
+            double turretPhi = result.turretPhi;
             double[] yawModeThetaRange = solver.getYawModeThetaRange();
             if (theta >= yawModeThetaRange[0] && theta <= yawModeThetaRange[1]) {
-                return new AutoSelectResult(theta, initialV0, true, "Success with initial v0");
+                return new AutoSelectResult(theta, initialV0, turretPhi, true, "Success with initial v0");
             }
         }
         
-        // 确定调整方向
+        // 确定调整方向：对于近距离目标，较大的初速度需要减小
         double step = 0.5; // 调整步长
         double currentV0 = initialV0;
-        boolean increasing = true;
+        boolean increasing = false; // 默认先尝试减小初速度
         
-        // 先尝试增大初速度
+        // 计算目标距离
+        double targetDistance = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
+        
+        // 如果目标距离较远，可能需要增大初速度
+        if (targetDistance > 20.0) {
+            increasing = true;
+        }
+        
+        // 尝试调整初速度
         for (int i = 0; i < 20; i++) { // 最多尝试20次
             currentV0 += step * (increasing ? 1 : -1);
             
@@ -157,8 +178,9 @@ public class AutoSelect {
                     increasing = false;
                     currentV0 = initialV0 - step;
                 } else {
-                    // 减小到下限仍不成功，返回失败
-                    return new AutoSelectResult(0, 0, false, "No valid v0 found within range");
+                    // 减小到下限仍不成功，尝试增大
+                    increasing = true;
+                    currentV0 = initialV0 + step;
                 }
             }
             
@@ -166,14 +188,15 @@ public class AutoSelect {
             result = solver.solve(relativeX, relativeY, robotVx, robotVy, currentV0);
             if (result.success) {
                 double theta = result.theta;
+                double turretPhi = result.turretPhi;
                 double[] yawModeThetaRange = solver.getYawModeThetaRange();
                 if (theta >= yawModeThetaRange[0] && theta <= yawModeThetaRange[1]) {
-                    return new AutoSelectResult(theta, currentV0, true, "Success after adjustment");
+                    return new AutoSelectResult(theta, currentV0, turretPhi, true, "Success after adjustment");
                 }
             }
         }
         
-        return new AutoSelectResult(0, 0, false, "No valid v0 found after adjustment");
+        return new AutoSelectResult(0, 0, 0, false, "No valid v0 found after adjustment");
     }
     
     // 新的Y模式实现：接受初始仰角，尝试并微调
@@ -182,8 +205,9 @@ public class AutoSelect {
         Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy, initialTheta, "Vel");
         if (result.success) {
             double v0 = result.v0;
+            double turretPhi = result.turretPhi;
             if (v0 >= v0Min && v0 <= v0Max) {
-                return new AutoSelectResult(initialTheta, v0, true, "Success with initial theta");
+                return new AutoSelectResult(initialTheta, v0, turretPhi, true, "Success with initial theta");
             }
         }
         
@@ -205,7 +229,7 @@ public class AutoSelect {
                     currentTheta = initialTheta - step;
                 } else {
                     // 减小到下限仍不成功，返回失败
-                    return new AutoSelectResult(0, 0, false, "No valid theta found within range");
+                    return new AutoSelectResult(0, 0, 0, false, "No valid theta found within range");
                 }
             }
             
@@ -213,13 +237,14 @@ public class AutoSelect {
             result = solver.solve(relativeX, relativeY, robotVx, robotVy, currentTheta, "Vel");
             if (result.success) {
                 double v0 = result.v0;
+                double turretPhi = result.turretPhi;
                 if (v0 >= v0Min && v0 <= v0Max) {
-                    return new AutoSelectResult(currentTheta, v0, true, "Success after adjustment");
+                    return new AutoSelectResult(currentTheta, v0, turretPhi, true, "Success after adjustment");
                 }
             }
         }
         
-        return new AutoSelectResult(0, 0, false, "No valid theta found after adjustment");
+        return new AutoSelectResult(0, 0, 0, false, "No valid theta found after adjustment");
     }
 
     public void setOptimalV0List(List<Double> optimalV0List) {
@@ -239,22 +264,33 @@ public class AutoSelect {
         this.thetaMin = thetaMin;
         this.thetaMax = thetaMax;
     }
+    
+    // 设置高度差（炮口与目标的高度差）
+    public void setDeltaH(double deltaH) {
+        this.params.deltaH = deltaH;
+    }
 
     public static class AutoSelectResult {
         public final double theta;
         public final double v0;
+        public final double turretPhi;
         public final boolean success;
         public final String message;
 
-        public AutoSelectResult(double theta, double v0, boolean success, String message) {
+        public AutoSelectResult(double theta, double v0, double turretPhi, boolean success, String message) {
             this.theta = theta;
             this.v0 = v0;
+            this.turretPhi = turretPhi;
             this.success = success;
             this.message = message;
         }
 
         public double getThetaDegrees() {
             return Math.toDegrees(theta);
+        }
+        
+        public double getTurretPhiDegrees() {
+            return Math.toDegrees(turretPhi);
         }
     }
 }

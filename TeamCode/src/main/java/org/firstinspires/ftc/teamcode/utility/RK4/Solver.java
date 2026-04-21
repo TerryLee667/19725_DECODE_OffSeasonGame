@@ -40,7 +40,7 @@ public class Solver {
         this.velModeThetaMin = 0;
         this.velModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
         this.v0Min = 2.0;
-        this.v0Max = 15.0;
+        this.v0Max = 23.0;
     }
 
     public Solver(ProjectileParameters params) {
@@ -60,7 +60,7 @@ public class Solver {
         this.velModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
         this.velModeThetaMin = 0;
         this.v0Min = 2.0;
-        this.v0Max = 15.0;
+        this.v0Max = 23.0;
     }
 
     public void setParameters(ProjectileParameters params) {

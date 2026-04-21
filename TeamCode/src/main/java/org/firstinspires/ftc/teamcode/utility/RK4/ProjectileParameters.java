@@ -10,7 +10,7 @@ public class ProjectileParameters {
     public double thetaMax;
 
     public ProjectileParameters() {
-        this.v0 = 6.0;
+        this.v0 = 10.0;
         this.k = 0.015;
         this.n = 2.0;
         this.m = 0.1;

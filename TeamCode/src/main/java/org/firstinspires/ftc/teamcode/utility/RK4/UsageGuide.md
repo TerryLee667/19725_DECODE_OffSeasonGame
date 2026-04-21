@@ -631,9 +631,9 @@ ProjectileParameters currentParams = solver.getCurrentParameters();
 **功能**：设置 Yaw 模式和 Vel 模式下的仰角范围，以及初速度范围。
 
 **默认范围**：
-- Yaw 模式（由初速度求仰角）：仰角范围 0-45 度
+- Yaw 模式（由初速度求仰角）：仰角范围 0-55 度
 - Vel 模式（由仰角求初速度）：仰角范围 0-55 度
-- 初速度范围：2.0-15.0 m/s
+- 初速度范围：2.0-23.0 m/s
 
 **代码示例**：
 ```java
@@ -663,7 +663,7 @@ System.out.println("初速度范围: " + v0Range[0] + "-" + v0Range[1] + " m/s")
 - 根据硬件能力设置合理的仰角范围，避免超出机械极限
 - 根据发射系统的实际能力设置初速度范围
 - 在不同场景下调整范围以获得最佳性能
-```
+
 
 ## 4. 常见问题与解决方案
 
@@ -706,11 +706,11 @@ AutoSelect.AutoSelectResult resultY = autoSelect.Select(relativeX, relativeY, ro
 
 // 新的V模式：接受初始初速度，尝试并微调
 double initialV0 = 15.0; // 初始初速度
-AutoSelect.AutoSelectResult resultVWithInitial = autoSelect.SelectWithInitialV0(relativeX, relativeY, robotVx, robotVy, initialV0);
+AutoSelect.AutoSelectResult resultVWithInitial = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, initialV0, "V");
 
 // 新的Y模式：接受初始仰角，尝试并微调
 double initialTheta = Math.toRadians(30); // 初始仰角（弧度）
-AutoSelect.AutoSelectResult resultYWithInitial = autoSelect.SelectWithInitialTheta(relativeX, relativeY, robotVx, robotVy, initialTheta);
+AutoSelect.AutoSelectResult resultYWithInitial = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, initialTheta, "Y");
 
 // Pv 模式：优先 V 模式，失败后使用 Y 模式
 AutoSelect.AutoSelectResult resultPv = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "Pv");
@@ -781,7 +781,7 @@ autoSelect.setThetaRange(Math.toRadians(15), Math.toRadians(40)); // 15-40 度
 3. **模式选择**：
    - 当需要稳定的初速度时，使用原来的 V 模式（用于Pv内部调用）
    - 当需要固定的仰角时，使用原来的 Y 模式（用于Py内部调用）
-   - 当需要从特定初始值开始微调时，使用新的 V 模式（SelectWithInitialV0）或新的 Y 模式（SelectWithInitialTheta）
+   - 当需要从特定初始值开始微调时，使用新的 V 模式（Select with initialV0）或新的 Y 模式（Select with initialTheta）
    - 当需要更高的成功率时，使用 Pv 或 Py 模式
 
 4. **初始值选择**：
@@ -845,11 +845,11 @@ public class ShootingController extends LinearOpMode {
             
             // 4. 使用新的V模式：从初始初速度开始微调
             double initialV0 = 15.0; // 初始初速度
-            AutoSelect.AutoSelectResult vModeResult = autoSelect.SelectWithInitialV0(relativeX, relativeY, robotVx, robotVy, initialV0);
+            AutoSelect.AutoSelectResult vModeResult = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, initialV0, "V");
             
             // 5. 使用新的Y模式：从初始仰角开始微调
             double initialTheta = Math.toRadians(30); // 初始仰角（30度）
-            AutoSelect.AutoSelectResult yModeResult = autoSelect.SelectWithInitialTheta(relativeX, relativeY, robotVx, robotVy, initialTheta);
+            AutoSelect.AutoSelectResult yModeResult = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, initialTheta, "Y");
             
             // 6. 显示结果
             if (result.success) {
