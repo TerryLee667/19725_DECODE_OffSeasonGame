@@ -35,11 +35,11 @@ public class Solver {
         this.binarySearchTolerance = 0.001;
         
         // 初始化模式相关的范围设置
-        this.yawModeThetaMin = 0;
+        this.yawModeThetaMin = params.thetaMin;
         this.yawModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
-        this.velModeThetaMin = 0;
+        this.velModeThetaMin = params.thetaMin;
         this.velModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
-        this.v0Min = 2.0;
+        this.v0Min = 0.0;
         this.v0Max = 23.0;
     }
 
@@ -55,11 +55,11 @@ public class Solver {
         this.binarySearchTolerance = 0.001;
         
         // 初始化模式相关的范围设置
-        this.yawModeThetaMin = 0;
+        this.yawModeThetaMin = params.thetaMin;
         this.yawModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
+        this.velModeThetaMin = params.thetaMin;
         this.velModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
-        this.velModeThetaMin = 0;
-        this.v0Min = 2.0;
+        this.v0Min = 0.0;
         this.v0Max = 23.0;
     }
 
@@ -67,7 +67,9 @@ public class Solver {
         this.params = params;
         this.parameterSets.put(currentParameterSet, params);
         // 更新仰角范围
+        this.yawModeThetaMin = params.thetaMin;
         this.yawModeThetaMax = params.thetaMax;
+        this.velModeThetaMin = params.thetaMin;
         this.velModeThetaMax = params.thetaMax;
     }
     
