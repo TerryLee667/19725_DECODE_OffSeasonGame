@@ -25,7 +25,7 @@ public class ParameterCalibrationApp {
         
         // 设置基本参数
         ProjectileParameters params = new ProjectileParameters();
-        params.v0 = getDoubleInput(scanner, "请输入初速度 (米/秒) [默认: 7.5]: ", 7.5);
+        params.v0 = getDoubleInput(scanner, "请输入初速度 (米/秒) [默认: 15.0]: ", 15.0);
         params.deltaH = getDoubleInput(scanner, "请输入炮口高度 (米) [默认: 0.2]: ", 0.2);
         params.m = getDoubleInput(scanner, "请输入小球质量 (公斤) [默认: 0.1]: ", 0.1);
         calculator.setParameters(params);
@@ -67,7 +67,7 @@ public class ParameterCalibrationApp {
     
     private static String getRK4Path(Scanner scanner) {
         System.out.println("请输入 RK4 目录的路径:");
-        System.out.println("示例: C:\\Users\\terry\\Documents\\trae_projects\\blue_power\\19725_DECODE_OffSeasonGame\\TeamCode\\src\\main\\java\\org\\firstinspires\\ftc\\teamcode\\utility\\RK4");
+        System.out.println("示例: ./");
         System.out.println("按 Enter 使用当前目录:");
         
         String input = scanner.nextLine().trim();

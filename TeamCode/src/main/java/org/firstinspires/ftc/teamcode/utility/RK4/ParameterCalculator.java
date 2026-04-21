@@ -182,9 +182,9 @@ public class ParameterCalculator {
         String basePath = args[0];
         ParameterCalculator calculator = new ParameterCalculator();
         
-        // 设置基本参数（包括手动设置的初速度）
+                // 设置基本参数（包括手动设置的初速度）
         ProjectileParameters params = new ProjectileParameters();
-        params.v0 = 7.5;     // 手动设置的初速度（米/秒）
+        params.v0 = 15.0;     // 手动设置的初速度（米/秒）
         params.deltaH = 0.2; // 炮口高度（米）
         params.m = 0.1;      // 小球质量（公斤）
         calculator.setParameters(params);

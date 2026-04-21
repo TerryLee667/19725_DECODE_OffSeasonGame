@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.utility.RK4;
 
 public class TrajectorySimulator {
 
-    private static final double DEFAULT_DT = 0.001;
+    private static final double DEFAULT_DT = 0.01; // 增加时间步长，减少计算量
     private static final double MAX_FLIGHT_TIME = 5.0;
 
     private double dt;
@@ -31,11 +31,11 @@ public class TrajectorySimulator {
                                       double robotVx, double robotVy,
                                       ProjectileParameters params) {
 
-        ProjectileState state = computeInitialState(turretPhi, theta, startX, startY, 0,
+        ProjectileState state = computeInitialState(turretPhi, theta, startX, startY, startZ,
                                                       robotVx, robotVy, params);
 
-        double targetZ = params.deltaH;
         ProjectileState prevState = state.copy();
+        double targetZ = params.deltaH;  // 目标相对高度
 
         int maxSteps = (int) (MAX_FLIGHT_TIME / dt);
 
@@ -43,7 +43,8 @@ public class TrajectorySimulator {
             state = rk4Step(state, params);
             state.time += dt;
 
-            if (state.z >= targetZ && prevState.z < targetZ) {
+            // 检查是否穿越目标高度
+            if ((state.z - targetZ) * (prevState.z - targetZ) <= 0 && prevState.z != targetZ) {
                 double tFraction = (targetZ - prevState.z) / (state.z - prevState.z);
                 double interpolatedX = prevState.x + (state.x - prevState.x) * tFraction;
                 double interpolatedY = prevState.y + (state.y - prevState.y) * tFraction;
@@ -62,7 +63,7 @@ public class TrajectorySimulator {
 
             prevState = state.copy();
 
-            if (state.z < targetZ - 0.5) {
+            if (state.z < targetZ - 10.0) { // 防止无限循环
                 break;
             }
         }

@@ -16,8 +16,16 @@
   - [3.1 基本使用](#31-基本使用)
   - [3.2 实时控制](#32-实时控制)
   - [3.3 性能优化](#33-性能优化)
+  - [3.4 多参数配置](#34-多参数配置)
+  - [3.5 模式相关范围设置](#35-模式相关范围设置)
 - [4. 常见问题与解决方案](#4-常见问题与解决方案)
-- [5. 代码示例](#5-代码示例)
+- [5. 自动模式选择](#5-自动模式选择)
+  - [5.1 AutoSelect 类](#51-autoselect-类)
+  - [5.2 使用示例](#52-使用示例)
+  - [5.3 自定义配置](#53-自定义配置)
+  - [5.4 注意事项](#54-注意事项)
+  - [5.5 完整 OpMode 示例](#55-完整-opmode-示例)
+- [6. 总结](#6-总结)
 
 ## 1. 系统架构
 
@@ -690,11 +698,19 @@ double robotVx = 0.5;   // 小车 x 方向速度
 double robotVy = 0.3;   // 小车 y 方向速度
 
 // 3. 选择模式并求解
-// V 模式：使用最优初速度列表
+// 原来的V模式：使用最优初速度列表（用于Pv内部调用）
 AutoSelect.AutoSelectResult resultV = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "V");
 
-// Y 模式：使用最优仰角列表
+// 原来的Y模式：使用最优仰角列表（用于Py内部调用）
 AutoSelect.AutoSelectResult resultY = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "Y");
+
+// 新的V模式：接受初始初速度，尝试并微调
+double initialV0 = 15.0; // 初始初速度
+AutoSelect.AutoSelectResult resultVWithInitial = autoSelect.SelectWithInitialV0(relativeX, relativeY, robotVx, robotVy, initialV0);
+
+// 新的Y模式：接受初始仰角，尝试并微调
+double initialTheta = Math.toRadians(30); // 初始仰角（弧度）
+AutoSelect.AutoSelectResult resultYWithInitial = autoSelect.SelectWithInitialTheta(relativeX, relativeY, robotVx, robotVy, initialTheta);
 
 // Pv 模式：优先 V 模式，失败后使用 Y 模式
 AutoSelect.AutoSelectResult resultPv = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, "Pv");
@@ -704,15 +720,33 @@ AutoSelect.AutoSelectResult resultPy = autoSelect.Select(relativeX, relativeY, r
 
 // 4. 处理结果
 if (resultV.success) {
-    System.out.println("V 模式成功:");
+    System.out.println("原来的V模式成功:");
     System.out.println("  仰角: " + resultV.getThetaDegrees() + "度");
     System.out.println("  初速度: " + resultV.v0 + " m/s");
 }
 
 if (resultY.success) {
-    System.out.println("Y 模式成功:");
+    System.out.println("原来的Y模式成功:");
     System.out.println("  仰角: " + resultY.getThetaDegrees() + "度");
     System.out.println("  初速度: " + resultY.v0 + " m/s");
+}
+
+if (resultVWithInitial.success) {
+    System.out.println("新的V模式成功:");
+    System.out.println("  仰角: " + resultVWithInitial.getThetaDegrees() + "度");
+    System.out.println("  初速度: " + resultVWithInitial.v0 + " m/s");
+    System.out.println("  消息: " + resultVWithInitial.message);
+} else {
+    System.out.println("新的V模式失败: " + resultVWithInitial.message);
+}
+
+if (resultYWithInitial.success) {
+    System.out.println("新的Y模式成功:");
+    System.out.println("  仰角: " + resultYWithInitial.getThetaDegrees() + "度");
+    System.out.println("  初速度: " + resultYWithInitial.v0 + " m/s");
+    System.out.println("  消息: " + resultYWithInitial.message);
+} else {
+    System.out.println("新的Y模式失败: " + resultYWithInitial.message);
 }
 ```
 
@@ -745,22 +779,23 @@ autoSelect.setThetaRange(Math.toRadians(15), Math.toRadians(40)); // 15-40 度
 2. **范围设置**：根据硬件能力设置合理的初速度和仰角范围，避免超出硬件极限。
 
 3. **模式选择**：
-   - 当需要稳定的初速度时，使用 V 模式
-   - 当需要固定的仰角时，使用 Y 模式
+   - 当需要稳定的初速度时，使用原来的 V 模式（用于Pv内部调用）
+   - 当需要固定的仰角时，使用原来的 Y 模式（用于Py内部调用）
+   - 当需要从特定初始值开始微调时，使用新的 V 模式（SelectWithInitialV0）或新的 Y 模式（SelectWithInitialTheta）
    - 当需要更高的成功率时，使用 Pv 或 Py 模式
 
-        
-        telemetry.addData("阻力系数 k", dragResult.k);
-        telemetry.addData("速度指数 n", dragResult.n);
-        telemetry.addData("拟合误差", dragResult.totalError);
-        telemetry.update();
-        
-        sleep(5000);
-    }
-}
-```
+4. **初始值选择**：
+   - 对于新的V模式，初始初速度应选择在硬件允许的范围内
+   - 对于新的Y模式，初始仰角应选择在合理的范围内（通常15-45度）
 
-### 5.2 实时预测示例（使用简化参数）
+5. **调整步长**：
+   - 新的V模式使用0.5 m/s的调整步长
+   - 新的Y模式使用1度的调整步长
+   - 如果需要更精细的调整，可以修改代码中的步长值
+
+### 5.5 完整 OpMode 示例
+
+以下是一个完整的 FTC OpMode 示例，展示如何在比赛中使用 RK4 跑打算法：
 
 ```java
 @TeleOp(name = "ShootingController", group = "Competition")
@@ -768,22 +803,28 @@ public class ShootingController extends LinearOpMode {
     private Solver solver;
     private ProjectileParameters params;
     private Limelight3A limelight;
+    private AutoSelect autoSelect;
     
     @Override
     public void runOpMode() {
-        // 初始化
+        // 初始化求解器
         solver = new Solver();
+        
+        // 设置物理参数（使用标定结果）
         params = new ProjectileParameters();
-        // 设置标定后的参数
         params.v0 = 6.2;     // 初速度（米/秒）
         params.k = 0.012;    // 阻力系数
         params.n = 1.9;      // 速度指数
         params.m = 0.1;      // 小球质量（公斤）
-        params.deltaH = 0.45; // 炮口与目标高度差（米）- 只考虑高度差，不考虑绝对高度
+        params.deltaH = 0.45; // 炮口与目标高度差（米）
         params.thetaMax = Math.PI / 4; // 最大仰角（45度）
         solver.setParameters(params);
         
+        // 初始化 Limelight
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        
+        // 初始化AutoSelect
+        autoSelect = new AutoSelect(params);
         
         telemetry.addLine("准备就绪，按 START 开始");
         telemetry.update();
@@ -802,13 +843,37 @@ public class ShootingController extends LinearOpMode {
             // 3. 直接求解（目标静止，使用简化参数）
             Solver.SolverResult result = solver.solve(relativeX, relativeY, robotVx, robotVy);
             
-            // 4. 显示结果
+            // 4. 使用新的V模式：从初始初速度开始微调
+            double initialV0 = 15.0; // 初始初速度
+            AutoSelect.AutoSelectResult vModeResult = autoSelect.SelectWithInitialV0(relativeX, relativeY, robotVx, robotVy, initialV0);
+            
+            // 5. 使用新的Y模式：从初始仰角开始微调
+            double initialTheta = Math.toRadians(30); // 初始仰角（30度）
+            AutoSelect.AutoSelectResult yModeResult = autoSelect.SelectWithInitialTheta(relativeX, relativeY, robotVx, robotVy, initialTheta);
+            
+            // 6. 显示结果
             if (result.success) {
-                telemetry.addData("炮塔朝向", result.getTurretPhiDegrees());
-                telemetry.addData("炮管仰角", result.getThetaDegrees());
-                telemetry.addData("飞行时间", result.flightTime);
+                telemetry.addData("直接求解 - 炮塔朝向", result.getTurretPhiDegrees());
+                telemetry.addData("直接求解 - 炮管仰角", result.getThetaDegrees());
+                telemetry.addData("直接求解 - 飞行时间", result.flightTime);
             } else {
-                telemetry.addLine("求解失败: " + result.message);
+                telemetry.addLine("直接求解失败: " + result.message);
+            }
+            
+            if (vModeResult.success) {
+                telemetry.addData("新V模式 - 仰角", vModeResult.getThetaDegrees());
+                telemetry.addData("新V模式 - 初速度", vModeResult.v0);
+                telemetry.addData("新V模式 - 状态", vModeResult.message);
+            } else {
+                telemetry.addLine("新V模式失败: " + vModeResult.message);
+            }
+            
+            if (yModeResult.success) {
+                telemetry.addData("新Y模式 - 仰角", yModeResult.getThetaDegrees());
+                telemetry.addData("新Y模式 - 初速度", yModeResult.v0);
+                telemetry.addData("新Y模式 - 状态", yModeResult.message);
+            } else {
+                telemetry.addLine("新Y模式失败: " + yModeResult.message);
             }
             
             telemetry.update();

@@ -29,16 +29,16 @@ public class Solver {
         this.parameterSets = new HashMap<>();
         this.parameterSets.put("default", params);
         this.currentParameterSet = "default";
-        this.maxOuterIterations = 5;
+        this.maxOuterIterations = 10;
         this.phiTolerance = Math.toRadians(0.5);
-        this.maxBinarySearchIterations = 15;
+        this.maxBinarySearchIterations = 30;
         this.binarySearchTolerance = 0.001;
         
         // 初始化模式相关的范围设置
         this.yawModeThetaMin = 0;
-        this.yawModeThetaMax = Math.PI / 4;  // Yaw模式：0-45度
+        this.yawModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
         this.velModeThetaMin = 0;
-        this.velModeThetaMax = Math.toRadians(55);  // Vel模式：0-55度
+        this.velModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
         this.v0Min = 2.0;
         this.v0Max = 15.0;
     }
@@ -49,15 +49,15 @@ public class Solver {
         this.parameterSets = new HashMap<>();
         this.parameterSets.put("default", params);
         this.currentParameterSet = "default";
-        this.maxOuterIterations = 5;
+        this.maxOuterIterations = 10;
         this.phiTolerance = Math.toRadians(0.5);
-        this.maxBinarySearchIterations = 15;
+        this.maxBinarySearchIterations = 30;
         this.binarySearchTolerance = 0.001;
         
         // 初始化模式相关的范围设置
         this.yawModeThetaMin = 0;
-        this.yawModeThetaMax = Math.PI / 4;  // Yaw模式：0-45度
-        this.velModeThetaMax = Math.toRadians(55);  // Vel模式：0-55度
+        this.yawModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
+        this.velModeThetaMax = params.thetaMax;  // 使用ProjectileParameters中的thetaMax
         this.velModeThetaMin = 0;
         this.v0Min = 2.0;
         this.v0Max = 15.0;
@@ -66,6 +66,9 @@ public class Solver {
     public void setParameters(ProjectileParameters params) {
         this.params = params;
         this.parameterSets.put(currentParameterSet, params);
+        // 更新仰角范围
+        this.yawModeThetaMax = params.thetaMax;
+        this.velModeThetaMax = params.thetaMax;
     }
     
     public void addParameterSet(String name, ProjectileParameters params) {
@@ -323,7 +326,8 @@ public class Solver {
             );
 
             if (!result.reachedTargetHeight) {
-                high = mid;
+                // 未达到目标高度，可能是因为仰角太小导致射程太近，应当增大仰角
+                low = mid;
                 continue;
             }
 
