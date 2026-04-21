@@ -21,7 +21,7 @@ public class ProjectorTest extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         detector = new Detector(hardwareMap);
-        projector = new Projector(0.9, 0.1);
+        projector = new Projector(1.887, 0.4);
 
         detector.start();
 

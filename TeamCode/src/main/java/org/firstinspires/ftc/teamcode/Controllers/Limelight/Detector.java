@@ -49,8 +49,8 @@ public class Detector {
                   
                     // 归一化到0-1范围（取画面长边为1，假设图像分辨率为640x480）
                     // m对应x方向偏移，n对应y方向偏移
-                    double m = -txp / 320.0; // x方向归一化，左侧为正
-                    double n = -typ / 320.0; // y方向归一化，上方为正（均取长边320为基准）
+                    double m = (320-txp) / 320.0; // x方向归一化，左侧为正
+                    double n = (240-typ) / 320.0; // y方向归一化，上方为正（均取长边320为基准）
 
                     centers.add(new double[]{m, n});
                 }
