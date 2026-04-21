@@ -40,8 +40,9 @@ public class Detector {
             List<LLResultTypes.DetectorResult> detectorResults = result.getDetectorResults();
 
             for (LLResultTypes.DetectorResult dr : detectorResults) {
-                // 检查对象名称是否匹配
-                if (dr.getClassName().equals(objectName)) {
+                // 检查对象名称是否匹配（包括带?的情况）
+                String className = dr.getClassName();
+                if (className.equals(objectName) || className.equals(objectName + "\r")) {
                     // 获取像素坐标偏移（相对于画面中心）
                     double txp = dr.getTargetXPixels();
                     double typ = dr.getTargetYPixels();
@@ -72,5 +73,35 @@ public class Detector {
         if (limelight != null) {
             limelight.stop();
         }
+    }
+    
+    /**
+     * 输出所有检测对象的全部信息
+     * @return 所有检测对象的详细信息，每行一个对象
+     */
+    public List<String> PrintAll() {
+        List<String> allInfo = new ArrayList<>();
+        LLResult result = limelight.getLatestResult();
+        
+        if (result != null && result.isValid()) {
+            // 获取检测器结果
+            List<LLResultTypes.DetectorResult> detectorResults = result.getDetectorResults();
+            
+            for (int i = 0; i < detectorResults.size(); i++) {
+                LLResultTypes.DetectorResult dr = detectorResults.get(i);
+                StringBuilder info = new StringBuilder();
+                info.append("Object " + i + ": ");
+                info.append("Name=" + dr.getClassName() + ", ");
+                info.append("X=" + dr.getTargetXPixels() + ", ");
+                info.append("Y=" + dr.getTargetYPixels() + ", ");
+                info.append("Confidence=" + dr.getConfidence() + ", ");
+                info.append("Area=" + dr.getTargetArea());
+                allInfo.add(info.toString());
+            }
+        } else {
+            allInfo.add("No valid Limelight results");
+        }
+        
+        return allInfo;
     }
 }
