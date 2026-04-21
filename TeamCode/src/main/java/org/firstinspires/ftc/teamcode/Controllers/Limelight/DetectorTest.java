@@ -33,6 +33,9 @@ public class DetectorTest extends LinearOpMode {
             // 检测green对象
             double[][] greenCenters = detector.get_center("green");
             
+            // 获取所有检测对象的详细信息
+            java.util.List<String> allObjectsInfo = detector.PrintAll();
+            
             // 输出状态信息
             telemetry.addData("Status", "Running");
             
@@ -46,6 +49,12 @@ public class DetectorTest extends LinearOpMode {
             telemetry.addData("Green Objects", "Count: " + greenCenters.length);
             for (int i = 0; i < greenCenters.length; i++) {
                 telemetry.addData("Green " + i, "(%.2f, %.2f)", greenCenters[i][0], greenCenters[i][1]);
+            }
+            
+            // 输出所有检测对象的详细信息
+            telemetry.addData("All Objects", "Count: " + (allObjectsInfo.size() > 0 && allObjectsInfo.get(0).equals("No valid Limelight results") ? 0 : allObjectsInfo.size()));
+            for (String info : allObjectsInfo) {
+                telemetry.addData("Object", info);
             }
             
             telemetry.update();

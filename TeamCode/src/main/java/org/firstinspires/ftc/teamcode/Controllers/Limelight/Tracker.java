@@ -13,23 +13,29 @@ import java.util.*;
 @Config
 public class Tracker {
     private Detector detector;              // 视觉检测器，用于获取目标中心点
-    private Projector projector = new Projector(0.9, 0.1);  // 坐标投影器，将像素坐标转换为世界坐标
+    private Projector projector = new Projector(1.887, 0.2);  // 坐标投影器，将像素坐标转换为世界坐标
     private List<Target> targets;           // 已确认的目标列表
     private List<CandidateTarget> candidateTargets;  // 候选目标列表，尚未达到确认帧数
     private int nextTargetId;               // 下一个目标ID
     private static int nextMemberId;        // 下一个成员ID（静态变量，全局唯一）
     private Map<Target, Integer> removalPending;  // 待移除的目标及其计数
     //参数写在类里面，可热调参的形式，便于集中管理和调试
-    public static double distanceThreshold = 0.3;// 聚类距离阈值，用于判断检测是否属于同一目标
-    public static int confirmationFrames = 3;// 目标确认所需的连续帧数
-    public static int removalFrames = 10;// 目标移除所需的连续缺失帧数
+    public static double distanceThreshold;// 聚类距离阈值，用于判断检测是否属于同一目标
+    public static int confirmationFrames;// 目标确认所需的连续帧数
+    public static int removalFrames;// 目标移除所需的连续缺失帧数
 
     /**
      * 构造函数
      * @param hardwareMap 硬件映射，用于初始化检测器
      */
-    public Tracker(HardwareMap hardwareMap) {
+    public Tracker(HardwareMap hardwareMap, double distanceThreshold, int confirmationFrames, int removalFrames) {
         this.detector = new Detector(hardwareMap);
+        if (detector == null) {
+            throw new RuntimeException("Detector initialization failed");
+        }
+        this.distanceThreshold = distanceThreshold;
+        this.confirmationFrames = confirmationFrames;
+        this.removalFrames = removalFrames;
         this.targets = new ArrayList<>();
         this.candidateTargets = new ArrayList<>();
         this.nextTargetId = 0;
