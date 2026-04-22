@@ -11,7 +11,7 @@ AutoSelect autoSelect = new AutoSelect();
 ```
 使用默认参数：
 - 最大仰角：65度
-- 初速度范围：0.0 - 23.0 m/s
+- 初速度范围：0.0 - 10.0 m/s
 - 仰角范围：45 - 65度
 
 ### 自定义参数构造函数
@@ -27,35 +27,22 @@ AutoSelect autoSelect = new AutoSelect(params);
 
 ## 主要方法
 
-### 1. Select - 模式选择
+### Select - 合并模式（推荐）
 ```java
-AutoSelectResult result = autoSelect.select(
+AutoSelectResult result = autoSelect.Select(
     relativeX,    // 目标相对X坐标（m）
     relativeY,    // 目标相对Y坐标（m）
     robotVx,      // 机器人X方向速度（m/s）
     robotVy,      // 机器人Y方向速度（m/s）
-    mode          // 模式：V, Y, Pv, Py
+    initialV0,    // 初始初速度（m/s）
+    initialTheta  // 初始仰角（弧度）
 );
 ```
 
-**模式说明：**
-- **V**：固定初速度模式，从最优初速度列表中选择
-- **Y**：固定仰角模式，从最优仰角列表中选择
-- **Pv**：优先V模式，失败后尝试Y模式
-- **Py**：优先Y模式，失败后尝试V模式
-
-### 2. Select - 使用初始值
-```java
-double initialValue = 15.0; // 初始值（V模式为初速度m/s，Y模式为仰角弧度）
-AutoSelectResult result = autoSelect.Select(
-    relativeX, relativeY, robotVx, robotVy, initialValue, mode
-);
-```
-从指定初始值开始，自动微调找到最优解。
-
-**模式说明：**
-- **V**：使用初始初速度，自动微调
-- **Y**：使用初始仰角，自动微调
+**功能说明：**
+- 同时输入初始初速度和仰角值
+- 使用二分法算法同时优化初速度和仰角
+- 输出最优的发射参数组合
 
 ## 返回结果
 
@@ -86,8 +73,10 @@ double targetY = 0.3;  // 目标Y坐标（m）
 double robotVx = -0.5; // 机器人X速度（m/s）
 double robotVy = 0.2;  // 机器人Y速度（m/s）
 
-// 使用Pv模式（优先V模式）
-AutoSelectResult result = autoSelect.Select(targetX, targetY, robotVx, robotVy, "Pv");
+// 使用合并模式（同时输入初始初速度和仰角）
+double initialV0 = 8.0;     // 初始初速度（m/s）
+double initialTheta = Math.toRadians(55); // 初始仰角（55度）
+AutoSelectResult result = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialV0, initialTheta);
 
 if (result.success) {
     System.out.printf("仰角: %.2f 度\n", result.getThetaDegrees());
@@ -98,60 +87,34 @@ if (result.success) {
 }
 ```
 
-### 使用初始初速度
-```java
-// 从15 m/s开始微调
-AutoSelectResult result = autoSelect.Select(
-    targetX, targetY, robotVx, robotVy, 15.0, "V"
-);
-
-if (result.success) {
-    System.out.printf("最终初速度: %.2f m/s\n", result.v0);
-    System.out.printf("仰角: %.2f 度\n", result.getThetaDegrees());
-}
-```
-
-### 使用初始仰角
-```java
-// 从30度开始微调
-AutoSelectResult result = autoSelect.Select(
-    targetX, targetY, robotVx, robotVy, Math.toRadians(30), "Y"
-);
-
-if (result.success) {
-    System.out.printf("最终仰角: %.2f 度\n", result.getThetaDegrees());
-    System.out.printf("初速度: %.2f m/s\n", result.v0);
-}
-```
-
 ## 配置方法
 
 ### 设置最优初速度列表
 ```java
 List<Double> optimalV0List = new ArrayList<>();
-optimalV0List.add(15.0);
-optimalV0List.add(18.0);
-optimalV0List.add(10.0);
+optimalV0List.add(7.0);
+optimalV0List.add(8.0);
+optimalV0List.add(9.0);
 autoSelect.setOptimalV0List(optimalV0List);
 ```
 
 ### 设置最优仰角列表
 ```java
 List<Double> optimalThetaList = new ArrayList<>();
-optimalThetaList.add(Math.toRadians(30));
-optimalThetaList.add(Math.toRadians(25));
-optimalThetaList.add(Math.toRadians(35));
+optimalThetaList.add(Math.toRadians(45));
+optimalThetaList.add(Math.toRadians(55));
+optimalThetaList.add(Math.toRadians(65));
 autoSelect.setOptimalThetaList(optimalThetaList);
 ```
 
 ### 设置初速度范围
 ```java
-autoSelect.setV0Range(2.0, 23.0); // 最小值，最大值
+autoSelect.setV0Range(0.0, 10.0); // 最小值，最大值
 ```
 
 ### 设置仰角范围
 ```java
-autoSelect.setThetaRange(0, Math.toRadians(55)); // 最小值，最大值（弧度）
+autoSelect.setThetaRange(Math.toRadians(45), Math.toRadians(65)); // 最小值，最大值（弧度）
 ```
 
 ### 设置高度差
@@ -171,17 +134,12 @@ autoSelect.setDeltaH(1.0); // 炮口与目标的高度差（m）
    - 速度：米/秒（m/s）
    - 角度：弧度（rad），显示时转换为度数
 
-3. **模式选择建议**：
-   - 优先使用**Pv**模式（优先V模式）
-   - V模式适合初速度可调的情况
-   - Y模式适合仰角可调的情况
-
-4. **参数范围**：
-   - 初速度范围：0.0 - 23.0 m/s
+3. **参数范围**：
+   - 初速度范围：0.0 - 10.0 m/s
    - 仰角范围：45 - 65度
    - 超出范围的参数将被拒绝
 
-5. **求解失败处理**：
+4. **求解失败处理**：
    - 检查目标位置是否在有效范围内
-   - 调整初速度或仰角范围
-   - 尝试使用不同的模式
+   - 调整初始初速度或仰角值
+   - 尝试使用不同的初始参数组合

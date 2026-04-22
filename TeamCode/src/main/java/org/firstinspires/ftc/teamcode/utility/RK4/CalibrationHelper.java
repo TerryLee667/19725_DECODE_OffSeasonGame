@@ -16,7 +16,7 @@ public class CalibrationHelper {
 
 
 
-    public CalibrationData fitDragParameters(double[][] rangeAngleData, ProjectileParameters params) {
+    public CalibrationData fitDragParameters(double[][] v0RangeAngleData, ProjectileParameters params) {
         double bestK = params.k;
         double bestN = params.n;
         double bestError = Double.MAX_VALUE;
@@ -24,7 +24,7 @@ public class CalibrationHelper {
         // 第一阶段：粗略搜索整个参数空间（扩大范围，包括更小的k值）
         for (double n = 1.0; n <= 3.0; n += 0.1) {
             for (double k = 0.0001; k <= 0.01; k += 0.0001) { // 更细的k步长，包括更小的值
-                double error = calculateFitError(rangeAngleData, k, n, params.m);
+                double error = calculateFitError(v0RangeAngleData, k, n, params.m);
                 if (error < bestError) {
                     bestError = error;
                     bestK = k;
@@ -40,7 +40,7 @@ public class CalibrationHelper {
         for (double n = coarseN - 0.2; n <= coarseN + 0.2; n += 0.01) { // 更细的n步长
             if (n < 0.5 || n > 4.0) continue;
             for (double k = Math.max(0.00005, coarseK - 0.001); k <= Math.min(0.02, coarseK + 0.001); k += 0.00005) { // 更细的k步长
-                double error = calculateFitError(rangeAngleData, k, n, params.m);
+                double error = calculateFitError(v0RangeAngleData, k, n, params.m);
                 if (error < bestError) {
                     bestError = error;
                     bestK = k;
@@ -52,35 +52,28 @@ public class CalibrationHelper {
         return new CalibrationData(bestK, bestN, bestError);
     }
 
-    // 生成不同初速度的数据点
-    private double[][] generateV0RangeData(double[] v0Values, double k, double n, double m) {
-        double[][] data = new double[v0Values.length][2];
-        ProjectileParameters testParams = new ProjectileParameters(0, k, n, m, 0, Math.PI / 4);
-
-        for (int i = 0; i < v0Values.length; i++) {
-            testParams.v0 = v0Values[i];
+    // 计算拟合误差
+    private double calculateFitError(double[][] v0RangeAngleData, double k, double n, double m) {
+        double totalError = 0;
+        
+        for (int i = 0; i < v0RangeAngleData.length; i++) {
+            double v0 = v0RangeAngleData[i][0];
+            double targetRange = v0RangeAngleData[i][1];
+            double angle = v0RangeAngleData[i][2];
+            
+            // 创建测试参数
+            ProjectileParameters testParams = new ProjectileParameters(0, k, n, m, 0, angle);
+            testParams.v0 = v0;
+            
+            // 模拟轨迹
             TrajectorySimulator.TrajectoryResult result = simulator.simulate(
-                0, Math.toRadians(45),
+                0, angle,
                 0, 0, 0,
                 0, 0,
                 testParams
             );
-            data[i][0] = result.getHorizontalDistance();
-            data[i][1] = 45; // 45度仰角
-        }
-
-        return data;
-    }
-
-    private double calculateFitError(double[][] rangeAngleData, double k, double n, double m) {
-        double totalError = 0;
-        // 我们的实验数据是不同初速度下的45度仰角射程
-        double[] v0Values = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
-        double[][] generatedData = generateV0RangeData(v0Values, k, n, m);
-
-        for (int i = 0; i < rangeAngleData.length && i < generatedData.length; i++) {
-            double targetRange = rangeAngleData[i][0];
-            double simRange = generatedData[i][0];
+            
+            double simRange = result.getHorizontalDistance();
             double error = Math.pow(simRange - targetRange, 2);
             totalError += error;
         }

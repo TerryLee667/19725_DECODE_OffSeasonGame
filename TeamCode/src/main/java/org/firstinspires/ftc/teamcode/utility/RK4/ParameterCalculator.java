@@ -32,11 +32,11 @@ public class ParameterCalculator {
 
     public CalculationResult calculateFromCSV(String basePath) {
         try {
-            // 读取阻力参数标定数据
-            double[][] rangeAngleData = readRangeAngleData(basePath + "/drag_calibration.csv");
+            // 读取阻力参数标定数据（包含v0）
+            double[][] v0RangeAngleData = readV0RangeAngleData(basePath + "/drag_calibration.csv");
             
-            // 拟合阻力参数（使用手动设置的初速度）
-            CalibrationHelper.CalibrationData dragResult = calibrator.fitDragParameters(rangeAngleData, params);
+            // 拟合阻力参数（使用CSV中的v0数据）
+            CalibrationHelper.CalibrationData dragResult = calibrator.fitDragParameters(v0RangeAngleData, params);
             
             // 更新参数
             params.k = dragResult.k;
@@ -48,7 +48,7 @@ public class ParameterCalculator {
                 dragResult.n,
                 dragResult.totalError,
                 0, // 不再使用初速度标定数据
-                rangeAngleData.length,
+                v0RangeAngleData.length,
                 true,
                 "Successfully calculated parameters from CSV files"
             );
@@ -66,6 +66,53 @@ public class ParameterCalculator {
         }
     }
 
+    private double[][] readV0RangeAngleData(String filePath) throws IOException {
+        List<double[]> dataList = new ArrayList<>();
+        Path path = Paths.get(filePath);
+        
+        if (!Files.exists(path)) {
+            throw new IOException("File not found: " + filePath);
+        }
+        
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            boolean isHeader = true;
+            
+            while ((line = br.readLine()) != null) {
+                if (isHeader) {
+                    isHeader = false;
+                    continue;
+                }
+                
+                line = line.trim();
+                if (!line.isEmpty()) {
+                    String[] parts = line.split(",");
+                    if (parts.length >= 3) {
+                        try {
+                            double v0 = Double.parseDouble(parts[0].trim());
+                            double range = Double.parseDouble(parts[1].trim());
+                            double angle = Math.toRadians(Double.parseDouble(parts[2].trim()));
+                            dataList.add(new double[]{v0, range, angle});
+                        } catch (NumberFormatException e) {
+                            // 跳过无效数据
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (dataList.isEmpty()) {
+            throw new IOException("No valid v0-range-angle data found in file: " + filePath);
+        }
+        
+        double[][] result = new double[dataList.size()][3];
+        for (int i = 0; i < dataList.size(); i++) {
+            result[i] = dataList.get(i);
+        }
+        
+        return result;
+    }
+    
     private double[][] readRangeAngleData(String filePath) throws IOException {
         List<double[]> dataList = new ArrayList<>();
         Path path = Paths.get(filePath);

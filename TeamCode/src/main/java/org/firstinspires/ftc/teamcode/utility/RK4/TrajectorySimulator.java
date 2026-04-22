@@ -44,7 +44,6 @@ public class TrajectorySimulator {
 
         for (int i = 0; i < maxSteps; i++) {
             state = rk4Step(state, params);
-            state.time += dt;
 
             // 检查是否穿越目标高度
             if ((state.z - targetZ) * (prevState.z - targetZ) <= 0 && prevState.z != targetZ) {
