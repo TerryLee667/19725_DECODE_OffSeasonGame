@@ -8,6 +8,7 @@ public class ProjectileParameters {
     public double g;
     public double deltaH;
     public double thetaMax;
+    public double thetaMin;
 
     public ProjectileParameters() {
         this.v0 = 10.0;
@@ -16,7 +17,8 @@ public class ProjectileParameters {
         this.m = 0.1;
         this.g = 9.81;
         this.deltaH = 0.5;
-        this.thetaMax = Math.PI / 4;
+        this.thetaMin = Math.toRadians(45);
+        this.thetaMax = Math.toRadians(65);
     }
 
     public ProjectileParameters(double v0, double k, double n, double m, double deltaH, double thetaMax) {
@@ -26,6 +28,7 @@ public class ProjectileParameters {
         this.m = m;
         this.g = 9.81;
         this.deltaH = deltaH;
+        this.thetaMin = Math.toRadians(45);
         this.thetaMax = thetaMax;
     }
 
@@ -60,6 +63,8 @@ public class ProjectileParameters {
     }
 
     public ProjectileParameters copy() {
-        return new ProjectileParameters(v0, k, n, m, deltaH, thetaMax);
+        ProjectileParameters copy = new ProjectileParameters(v0, k, n, m, deltaH, thetaMax);
+        copy.thetaMin = this.thetaMin;
+        return copy;
     }
 }
