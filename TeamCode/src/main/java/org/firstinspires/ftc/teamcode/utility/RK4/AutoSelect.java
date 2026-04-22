@@ -61,29 +61,6 @@ public class AutoSelect {
         optimalThetaList.add(Math.toRadians(65));
     }
 
-    public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, String mode) {
-        switch (mode) {
-            case "V":
-                return selectByOptimalV0(relativeX, relativeY, robotVx, robotVy);
-            case "Y":
-                return selectByOptimalTheta(relativeX, relativeY, robotVx, robotVy);
-            case "Pv":
-                AutoSelectResult resultV = selectByOptimalV0(relativeX, relativeY, robotVx, robotVy);
-                if (resultV.success) {
-                    return resultV;
-                }
-                return selectByOptimalTheta(relativeX, relativeY, robotVx, robotVy);
-            case "Py":
-                AutoSelectResult resultY = selectByOptimalTheta(relativeX, relativeY, robotVx, robotVy);
-                if (resultY.success) {
-                    return resultY;
-                }
-                return selectByOptimalV0(relativeX, relativeY, robotVx, robotVy);
-            default:
-                return new AutoSelectResult(0, 0, 0, false, "Invalid mode");
-        }
-    }
-    
     public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, double initialValue, String mode) {
         switch (mode) {
             case "V":

@@ -21,7 +21,7 @@ public class TestRK4 {
             ProjectileParameters params = new ProjectileParameters();
             params.v0 = 10; // 使用10m/s初速度进行测试
             // 使用固定参数进行测试，便于调试
-            params.k = 0.0005;  // 显著减小k值，减小空气阻力
+            params.k = 0.0004;  // 显著减小k值，减小空气阻力
             params.n = 2.0;   // 固定n值
             params.m = 0.06;
             params.deltaH = 1; // 目标高度与炮口高度相同
@@ -310,7 +310,8 @@ public class TestRK4 {
             System.out.println();
 
             // 测试 V 模式（由初速度求仰角）
-            AutoSelect.AutoSelectResult vResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, "V");
+            double initialV0ForVMode = 7.9; // V模式的初始初速度
+            AutoSelect.AutoSelectResult vResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialV0ForVMode, "V");
             System.out.println("V 模式结果:");
             if (vResult.success) {
                 System.out.printf("仰角: %.2f 度\n", vResult.getThetaDegrees());
@@ -322,7 +323,8 @@ public class TestRK4 {
             System.out.println();
 
             // 测试 Y 模式（由仰角求初速度）
-            AutoSelect.AutoSelectResult yResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, "Y");
+            double initialThetaForYMode = Math.toRadians(55); // Y模式的初始仰角（55度）
+            AutoSelect.AutoSelectResult yResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialThetaForYMode, "Y");
             System.out.println("Y 模式结果:");
             if (yResult.success) {
                 System.out.printf("仰角: %.2f 度\n", yResult.getThetaDegrees());
@@ -330,62 +332,6 @@ public class TestRK4 {
                 System.out.printf("旋转角: %.2f 度\n", yResult.getTurretPhiDegrees());
             } else {
                 System.out.println("Y 模式失败: " + yResult.message);
-            }
-            System.out.println();
-
-            // 测试新的V模式（SelectWithInitialV0）：从初始初速度开始微调
-            double initialV0 = 10.0; // 初始初速度
-            AutoSelect.AutoSelectResult vResultWithInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialV0, "V");
-            System.out.println("新的V模式测试（SelectWithInitialV0）:");
-            System.out.printf("初始初速度: %.2f m/s\n", initialV0);
-            if (vResultWithInitial.success) {
-                System.out.printf("成功! 仰角: %.2f 度, 最终初速度: %.2f m/s, 旋转角: %.2f 度\n", 
-                    vResultWithInitial.getThetaDegrees(), vResultWithInitial.v0, vResultWithInitial.getTurretPhiDegrees());
-                System.out.println("消息: " + vResultWithInitial.message);
-            } else {
-                System.out.println("失败: " + vResultWithInitial.message);
-            }
-            System.out.println();
-
-            // 测试新的Y模式（SelectWithInitialTheta）：从初始仰角开始微调
-            double initialTheta = Math.toRadians(50); // 初始仰角（50度）
-            AutoSelect.AutoSelectResult yResultWithInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialTheta, "Y");
-            System.out.println("新的Y模式测试（SelectWithInitialTheta）:");
-            System.out.printf("初始仰角: %.2f 度\n", Math.toDegrees(initialTheta));
-            if (yResultWithInitial.success) {
-                System.out.printf("成功! 仰角: %.2f 度, 初速度: %.2f m/s, 旋转角: %.2f 度\n", 
-                    yResultWithInitial.getThetaDegrees(), yResultWithInitial.v0, yResultWithInitial.getTurretPhiDegrees());
-                System.out.println("消息: " + yResultWithInitial.message);
-            } else {
-                System.out.println("失败: " + yResultWithInitial.message);
-            }
-            System.out.println();
-
-            // 测试新的V模式，使用一个不可行的初始初速度，验证微调机制
-            double badInitialV0 = 5.0; // 过小的初始初速度
-            AutoSelect.AutoSelectResult vResultBadInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, badInitialV0, "V");
-            System.out.println("新的V模式测试（不可行初始值）:");
-            System.out.printf("初始初速度: %.2f m/s（过小）\n", badInitialV0);
-            if (vResultBadInitial.success) {
-                System.out.printf("成功! 仰角: %.2f 度, 最终初速度: %.2f m/s, 旋转角: %.2f 度\n", 
-                    vResultBadInitial.getThetaDegrees(), vResultBadInitial.v0, vResultBadInitial.getTurretPhiDegrees());
-                System.out.println("消息: " + vResultBadInitial.message);
-            } else {
-                System.out.println("失败（预期）: " + vResultBadInitial.message);
-            }
-            System.out.println();
-
-            // 测试新的Y模式，使用一个不可行的初始仰角，验证微调机制
-            double badInitialTheta = Math.toRadians(45); // 过小的初始仰角
-            AutoSelect.AutoSelectResult yResultBadInitial = autoSelect.Select(targetX, targetY, robotVx, robotVy, badInitialTheta, "Y");
-            System.out.println("新的Y模式测试（不可行初始值）:");
-            System.out.printf("初始仰角: %.2f 度（过小）\n", Math.toDegrees(badInitialTheta));
-            if (yResultBadInitial.success) {
-                System.out.printf("成功! 仰角: %.2f 度, 初速度: %.2f m/s, 旋转角: %.2f 度\n", 
-                    yResultBadInitial.getThetaDegrees(), yResultBadInitial.v0, yResultBadInitial.getTurretPhiDegrees());
-                System.out.println("消息: " + yResultBadInitial.message);
-            } else {
-                System.out.println("失败（预期）: " + yResultBadInitial.message);
             }
             System.out.println();
 
@@ -417,58 +363,6 @@ public class TestRK4 {
 
                 double yError = calculateDistanceError(yLanding.landingX, yLanding.landingY, targetX, targetY);
                 System.out.printf("Y 模式落点: (%.2f, %.2f) m, 误差: %.2f m\n", yLanding.landingX, yLanding.landingY, yError);
-            }
-
-            // 模拟新的V模式（SelectWithInitialV0）
-            if (vResultWithInitial.success) {
-                ProjectileParameters vInitParams = fitParams.copy();
-                vInitParams.v0 = vResultWithInitial.v0;
-                TrajectorySimulator.TrajectoryResult vInitLanding = simulator.simulateLanding(
-                    vResultWithInitial.turretPhi, vResultWithInitial.theta,
-                    0, 0, robotVx, robotVy, vInitParams
-                );
-
-                double vInitError = calculateDistanceError(vInitLanding.landingX, vInitLanding.landingY, targetX, targetY);
-                System.out.printf("V模式(SelectWithInitialV0)落点: (%.2f, %.2f) m, 误差: %.2f m\n", vInitLanding.landingX, vInitLanding.landingY, vInitError);
-            }
-
-            // 模拟新的Y模式（SelectWithInitialTheta）
-            if (yResultWithInitial.success) {
-                ProjectileParameters yInitParams = fitParams.copy();
-                yInitParams.v0 = yResultWithInitial.v0;
-                TrajectorySimulator.TrajectoryResult yInitLanding = simulator.simulateLanding(
-                    yResultWithInitial.turretPhi, yResultWithInitial.theta,
-                    0, 0, robotVx, robotVy, yInitParams
-                );
-
-                double yInitError = calculateDistanceError(yInitLanding.landingX, yInitLanding.landingY, targetX, targetY);
-                System.out.printf("Y模式(SelectWithInitialTheta)落点: (%.2f, %.2f) m, 误差: %.2f m\n", yInitLanding.landingX, yInitLanding.landingY, yInitError);
-            }
-
-            // 模拟V模式（不可行初始值）
-            if (vResultBadInitial.success) {
-                ProjectileParameters vBadParams = fitParams.copy();
-                vBadParams.v0 = vResultBadInitial.v0;
-                TrajectorySimulator.TrajectoryResult vBadLanding = simulator.simulateLanding(
-                    vResultBadInitial.turretPhi, vResultBadInitial.theta,
-                    0, 0, robotVx, robotVy, vBadParams
-                );
-
-                double vBadError = calculateDistanceError(vBadLanding.landingX, vBadLanding.landingY, targetX, targetY);
-                System.out.printf("V模式(不可行初始值)落点: (%.2f, %.2f) m, 误差: %.2f m\n", vBadLanding.landingX, vBadLanding.landingY, vBadError);
-            }
-
-            // 模拟Y模式（不可行初始值）
-            if (yResultBadInitial.success) {
-                ProjectileParameters yBadParams = fitParams.copy();
-                yBadParams.v0 = yResultBadInitial.v0;
-                TrajectorySimulator.TrajectoryResult yBadLanding = simulator.simulateLanding(
-                    yResultBadInitial.turretPhi, yResultBadInitial.theta,
-                    0, 0, robotVx, robotVy, yBadParams
-                );
-
-                double yBadError = calculateDistanceError(yBadLanding.landingX, yBadLanding.landingY, targetX, targetY);
-                System.out.printf("Y模式(不可行初始值)落点: (%.2f, %.2f) m, 误差: %.2f m\n", yBadLanding.landingX, yBadLanding.landingY, yBadError);
             }
 
             System.out.println();
