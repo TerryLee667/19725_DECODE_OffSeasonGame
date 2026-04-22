@@ -294,79 +294,69 @@ public class TestRK4 {
             }
             System.out.println();
 
-            // 7. 测试 AutoSelect
+            System.out.println();
+
+            // 7. 循环测试 AutoSelect 多次
             AutoSelect autoSelect = new AutoSelect(fitParams);
             Random random = new Random();
+            int testCount = 10; // 测试次数
+            double totalError = 0;
+            double maxError = 0;
+            double minError = Double.MAX_VALUE;
+            
+            System.out.println("=== 开始多组测试 (" + testCount + "次) ===");
+            
+            for (int testIndex = 0; testIndex < testCount; testIndex++) {
+                // 生成随机目标位置和小车速度
+                double targetX = 4.0 + random.nextDouble() * 2.0; // 4-6 米，均值5米
+                double targetY = -1.0 + random.nextDouble() * 2.0; // -1 到 1 米
+                double robotVx = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
+                double robotVy = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
 
-            // 生成随机目标位置和小车速度
-            double targetX = 4.0 + random.nextDouble() * 2.0; // 4-6 米，均值5米
-            double targetY = -1.0 + random.nextDouble() * 2.0; // -1 到 1 米
-            double robotVx = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
-            double robotVy = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
+                System.out.println("\n测试 " + (testIndex + 1) + ":");
+                System.out.printf("目标位置: (%.2f, %.2f) m\n", targetX, targetY);
+                System.out.printf("小车速度: (%.2f, %.2f) m/s\n", robotVx, robotVy);
+                
+                // 测试合并模式（同时输入初始初速度和仰角）
+                double combinedInitialV0 = 8.0; // 合并模式的初始初速度
+                double combinedInitialTheta = Math.toRadians(55); // 合并模式的初始仰角
+                AutoSelect.AutoSelectResult combinedResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, combinedInitialV0, combinedInitialTheta);
+                System.out.println("合并模式结果:");
+                if (combinedResult.success) {
+                    System.out.printf("仰角: %.2f 度\n", combinedResult.getThetaDegrees());
+                    System.out.printf("初速度: %.2f m/s\n", combinedResult.v0);
+                    System.out.printf("旋转角: %.2f 度\n", combinedResult.getTurretPhiDegrees());
+                    System.out.println("消息: " + combinedResult.message);
+                } else {
+                    System.out.println("合并模式失败: " + combinedResult.message);
+                }
 
-            System.out.println("测试 AutoSelect:");
-            System.out.printf("目标位置: (%.2f, %.2f) m\n", targetX, targetY);
-            System.out.printf("小车速度: (%.2f, %.2f) m/s\n", robotVx, robotVy);
-            System.out.println();
+                // 模拟小球落点并计算误差
+                if (combinedResult.success) {
+                    ProjectileParameters combinedParams = fitParams.copy();
+                    combinedParams.v0 = combinedResult.v0;
+                    TrajectorySimulator.TrajectoryResult combinedLanding = simulator.simulateLanding(
+                        combinedResult.turretPhi, combinedResult.theta,
+                        0, 0, robotVx, robotVy, combinedParams
+                    );
 
-            // 测试 V 模式（由初速度求仰角）
-            double initialV0ForVMode = 7.9; // V模式的初始初速度
-            AutoSelect.AutoSelectResult vResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialV0ForVMode, "V");
-            System.out.println("V 模式结果:");
-            if (vResult.success) {
-                System.out.printf("仰角: %.2f 度\n", vResult.getThetaDegrees());
-                System.out.printf("初速度: %.2f m/s\n", vResult.v0);
-                System.out.printf("旋转角: %.2f 度\n", vResult.getTurretPhiDegrees());
-            } else {
-                System.out.println("V 模式失败: " + vResult.message);
+                    double combinedError = calculateDistanceError(combinedLanding.landingX, combinedLanding.landingY, targetX, targetY);
+                    System.out.printf("落点: (%.2f, %.2f) m, 误差: %.2f m\n", combinedLanding.landingX, combinedLanding.landingY, combinedError);
+                    
+                    // 统计误差
+                    totalError += combinedError;
+                    if (combinedError > maxError) maxError = combinedError;
+                    if (combinedError < minError) minError = combinedError;
+                }
             }
-            System.out.println();
-
-            // 测试 Y 模式（由仰角求初速度）
-            double initialThetaForYMode = Math.toRadians(55); // Y模式的初始仰角（55度）
-            AutoSelect.AutoSelectResult yResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialThetaForYMode, "Y");
-            System.out.println("Y 模式结果:");
-            if (yResult.success) {
-                System.out.printf("仰角: %.2f 度\n", yResult.getThetaDegrees());
-                System.out.printf("初速度: %.2f m/s\n", yResult.v0);
-                System.out.printf("旋转角: %.2f 度\n", yResult.getTurretPhiDegrees());
-            } else {
-                System.out.println("Y 模式失败: " + yResult.message);
-            }
-            System.out.println();
-
-            // 8. 模拟小球落点并计算误差
-            System.out.println("模拟小球落点:");
-
-            // 模拟 V 模式
-            if (vResult.success) {
-                ProjectileParameters vParams = fitParams.copy();
-                vParams.v0 = vResult.v0;
-
-                TrajectorySimulator.TrajectoryResult vLanding = simulator.simulateLanding(
-                    vResult.turretPhi, vResult.theta,
-                    0, 0, robotVx, robotVy, vParams
-                );
-
-                double vError = calculateDistanceError(vLanding.landingX, vLanding.landingY, targetX, targetY);
-                System.out.printf("V 模式落点: (%.2f, %.2f) m, 误差: %.2f m\n", vLanding.landingX, vLanding.landingY, vError);
-            }
-
-            // 模拟 Y 模式
-            if (yResult.success) {
-                ProjectileParameters yParams = fitParams.copy();
-                yParams.v0 = yResult.v0;
-                TrajectorySimulator.TrajectoryResult yLanding = simulator.simulateLanding(
-                    yResult.turretPhi, yResult.theta,
-                    0, 0, robotVx, robotVy, yParams
-                );
-
-                double yError = calculateDistanceError(yLanding.landingX, yLanding.landingY, targetX, targetY);
-                System.out.printf("Y 模式落点: (%.2f, %.2f) m, 误差: %.2f m\n", yLanding.landingX, yLanding.landingY, yError);
-            }
-
-            System.out.println();
-            System.out.println("=== 测试完成 ===");
+            
+            // 输出统计结果
+            System.out.println("\n=== 测试统计结果 ===");
+            System.out.printf("测试次数: %d\n", testCount);
+            System.out.printf("平均误差: %.2f m\n", totalError / testCount);
+            System.out.printf("最大误差: %.2f m\n", maxError);
+            System.out.printf("最小误差: %.2f m\n", minError);
+            System.out.printf("误差稳定性: %s\n", (maxError - minError < 0.1) ? "良好" : "一般");
 
         } catch (Exception e) {
             e.printStackTrace();
