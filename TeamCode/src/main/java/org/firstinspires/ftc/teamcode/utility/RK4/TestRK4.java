@@ -299,7 +299,7 @@ public class TestRK4 {
             // 7. 循环测试 AutoSelect 多次
             AutoSelect autoSelect = new AutoSelect(fitParams);
             Random random = new Random();
-            int testCount = 10; // 测试次数
+            int testCount = 30; // 测试次数
             double totalError = 0;
             double maxError = 0;
             double minError = Double.MAX_VALUE;
@@ -318,8 +318,8 @@ public class TestRK4 {
                 System.out.printf("小车速度: (%.2f, %.2f) m/s\n", robotVx, robotVy);
                 
                 // 测试合并模式（同时输入初始初速度和仰角）
-                double combinedInitialV0 = 8.0; // 合并模式的初始初速度
-                double combinedInitialTheta = Math.toRadians(55); // 合并模式的初始仰角
+                double combinedInitialV0 = 7.5; // 合并模式的初始初速度
+                double combinedInitialTheta = Math.toRadians(52); // 合并模式的初始仰角
                 AutoSelect.AutoSelectResult combinedResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, combinedInitialV0, combinedInitialTheta);
                 System.out.println("合并模式结果:");
                 if (combinedResult.success) {

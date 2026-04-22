@@ -65,29 +65,32 @@ public class AutoSelect {
     public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, double initialV0, double initialTheta) {
         // 首先尝试初始参数组合
         Solver.SolverResult vResult = solver.solve(relativeX, relativeY, robotVx, robotVy, initialV0);
+        Solver.SolverResult yResult = solver.solve(relativeX, relativeY, robotVx, robotVy, initialTheta, "Vel");
+        
+        // 记录初始解
+        AutoSelectResult initialResult = null;
         if (vResult.success) {
             double theta = vResult.theta;
             double turretPhi = vResult.turretPhi;
             double[] yawModeThetaRange = solver.getYawModeThetaRange();
             if (theta >= yawModeThetaRange[0] && theta <= yawModeThetaRange[1]) {
-                return new AutoSelectResult(theta, initialV0, turretPhi, true, "Success with initial v0");
+                initialResult = new AutoSelectResult(theta, initialV0, turretPhi, true, "Success with initial v0");
             }
         }
         
-        Solver.SolverResult yResult = solver.solve(relativeX, relativeY, robotVx, robotVy, initialTheta, "Vel");
-        if (yResult.success) {
+        if (yResult.success && (initialResult == null || yResult.v0 >= v0Min && yResult.v0 <= v0Max)) {
             double v0 = yResult.v0;
             double turretPhi = yResult.turretPhi;
             if (v0 >= v0Min && v0 <= v0Max) {
-                return new AutoSelectResult(initialTheta, v0, turretPhi, true, "Success with initial theta");
+                initialResult = new AutoSelectResult(initialTheta, v0, turretPhi, true, "Success with initial theta");
             }
         }
         
-        // 使用二分法同时优化初速度和仰角
-        double v0Low = Math.max(v0Min, initialV0 - 1.0); // 初始搜索范围（调整尽可能小）
-        double v0High = Math.min(v0Max, initialV0 + 1.0);
-        double thetaLow = Math.max(thetaMin, initialTheta - Math.toRadians(5)); // 5度范围
-        double thetaHigh = Math.min(thetaMax, initialTheta + Math.toRadians(5));
+        // 使用二分法同时优化初速度和仰角，即使初始解存在也要进一步优化
+        double v0Low = Math.max(v0Min, initialV0 - 1.5); // 扩大搜索范围
+        double v0High = Math.min(v0Max, initialV0 + 1.5);
+        double thetaLow = Math.max(thetaMin, initialTheta - Math.toRadians(10)); // 10度范围
+        double thetaHigh = Math.min(thetaMax, initialTheta + Math.toRadians(10));
         
         double bestV0 = initialV0;
         double bestTheta = initialTheta;
@@ -96,7 +99,7 @@ public class AutoSelect {
         boolean foundValid = false;
         
         // 网格搜索 + 二分法
-        for (int i = 0; i < 30; i++) { // 最多30次迭代
+        for (int i = 0; i < 50; i++) { // 增加迭代次数到50次
             double v0Mid = (v0Low + v0High) / 2;
             double thetaMid = (thetaLow + thetaHigh) / 2;
             
@@ -106,7 +109,21 @@ public class AutoSelect {
                 double theta = result1.theta;
                 double turretPhi = result1.turretPhi;
                 if (theta >= thetaMin && theta <= thetaMax) {
-                    double error = Math.abs(v0Mid - initialV0) + Math.abs(theta - initialTheta);
+                    // 计算落点误差
+                    ProjectileParameters tempParams = params.copy();
+                    tempParams.v0 = v0Mid;
+                    TrajectorySimulator simulator = new TrajectorySimulator(0.01);
+                    TrajectorySimulator.TrajectoryResult landing = simulator.simulate(
+                        turretPhi, theta, 0, 0, 0, robotVx, robotVy, tempParams
+                    );
+                    double distanceError = Math.sqrt(
+                        Math.pow(landing.landingX - relativeX, 2) + 
+                        Math.pow(landing.landingY - relativeY, 2)
+                    );
+                    
+                    // 综合误差：落点误差 + 参数调整量
+                    double error = distanceError + 0.01 * (Math.abs(v0Mid - initialV0) + Math.abs(theta - initialTheta));
+                    
                     if (error < bestError) {
                         bestError = error;
                         bestV0 = v0Mid;
@@ -129,7 +146,21 @@ public class AutoSelect {
                 double v0 = result2.v0;
                 double turretPhi = result2.turretPhi;
                 if (v0 >= v0Min && v0 <= v0Max) {
-                    double error = Math.abs(v0 - initialV0) + Math.abs(thetaMid - initialTheta);
+                    // 计算落点误差
+                    ProjectileParameters tempParams = params.copy();
+                    tempParams.v0 = v0;
+                    TrajectorySimulator simulator = new TrajectorySimulator(0.01);
+                    TrajectorySimulator.TrajectoryResult landing = simulator.simulate(
+                        turretPhi, thetaMid, 0, 0, 0, robotVx, robotVy, tempParams
+                    );
+                    double distanceError = Math.sqrt(
+                        Math.pow(landing.landingX - relativeX, 2) + 
+                        Math.pow(landing.landingY - relativeY, 2)
+                    );
+                    
+                    // 综合误差：落点误差 + 参数调整量
+                    double error = distanceError + 0.01 * (Math.abs(v0 - initialV0) + Math.abs(thetaMid - initialTheta));
+                    
                     if (error < bestError) {
                         bestError = error;
                         bestV0 = v0;
@@ -147,17 +178,36 @@ public class AutoSelect {
             }
             
             // 缩小搜索范围
-            v0Low = Math.max(v0Min, bestV0 - 0.2);
-            v0High = Math.min(v0Max, bestV0 + 0.2);
-            thetaLow = Math.max(thetaMin, bestTheta - Math.toRadians(1));
-            thetaHigh = Math.min(thetaMax, bestTheta + Math.toRadians(1));
+            v0Low = Math.max(v0Min, bestV0 - 0.1);
+            v0High = Math.min(v0Max, bestV0 + 0.1);
+            thetaLow = Math.max(thetaMin, bestTheta - Math.toRadians(0.5));
+            thetaHigh = Math.min(thetaMax, bestTheta + Math.toRadians(0.5));
         }
         
         if (foundValid) {
-            return new AutoSelectResult(bestTheta, bestV0, bestTurretPhi, true, "Success with combined optimization");
+            // 验证最终解
+            ProjectileParameters finalParams = params.copy();
+            finalParams.v0 = bestV0;
+            TrajectorySimulator simulator = new TrajectorySimulator(0.01);
+            TrajectorySimulator.TrajectoryResult finalLanding = simulator.simulate(
+                bestTurretPhi, bestTheta, 0, 0, 0, robotVx, robotVy, finalParams
+            );
+            double finalError = Math.sqrt(
+                Math.pow(finalLanding.landingX - relativeX, 2) + 
+                Math.pow(finalLanding.landingY - relativeY, 2)
+            );
+            
+            if (finalError < 0.1) {
+                return new AutoSelectResult(bestTheta, bestV0, bestTurretPhi, true, "Success with optimized parameters");
+            }
         }
         
-        // 如果优化失败，尝试备选方案
+        // 如果优化失败，使用初始解
+        if (initialResult != null) {
+            return initialResult;
+        }
+        
+        // 最后尝试备选方案
         return selectByInitialV0(relativeX, relativeY, robotVx, robotVy, initialV0);
     }
 
