@@ -198,11 +198,12 @@ public class TestRK4 {
     }
 
     // 写入实验数据到 CSV 文件
-    private static void writeExperimentDataToCSV(double[][] data, String filePath) throws IOException {
+    private static void writeExperimentDataToCSV(double[][] data, String filePath, double[] v0Values) throws IOException {
         try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write("distance,angle\n");
-            for (double[] row : data) {
-                writer.write(row[0] + "," + row[1] + "\n");
+            writer.write("v0,distance,angle\n");
+            for (int i = 0; i < data.length; i++) {
+                double v0 = v0Values[i];
+                writer.write(v0 + "," + data[i][0] + "," + data[i][1] + "\n");
             }
         }
     }
@@ -230,6 +231,7 @@ public class TestRK4 {
 
             // 3. 生成实验数据
             int numPoints = 10;
+            double[] v0Values = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
             double[][] experimentData = simulator.generateExperimentData(trueParams, numPoints);
             System.out.println("生成的实验数据:");
             for (double[] data : experimentData) {
@@ -239,7 +241,7 @@ public class TestRK4 {
 
             // 4. 写入实验数据到 CSV 文件
             String csvPath = "c:\\Users\\terry\\Documents\\trae_projects\\blue_power\\RK4\\org\\firstinspires\\ftc\\teamcode\\utility\\RK4\\drag_calibration.csv";
-            writeExperimentDataToCSV(experimentData, csvPath);
+            writeExperimentDataToCSV(experimentData, csvPath, v0Values);
             System.out.println("实验数据已写入: " + csvPath);
             System.out.println();
 
@@ -308,7 +310,7 @@ public class TestRK4 {
             
             for (int testIndex = 0; testIndex < testCount; testIndex++) {
                 // 生成随机目标位置和小车速度
-                double targetX = 4.0 + random.nextDouble() * 2.0; // 4-6 米，均值5米
+                double targetX = 2.5 + random.nextDouble() * 3.0; // 2-6 米，均值3米
                 double targetY = -1.0 + random.nextDouble() * 2.0; // -1 到 1 米
                 double robotVx = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
                 double robotVy = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s

@@ -197,6 +197,8 @@ public class Solver {
         double bestFlightTime = 0;
         double predictedTargetX = targetX;
         double predictedTargetY = targetY;
+        double bestError = Double.MAX_VALUE;
+        SolverResult bestResult = null;
 
         for (int i = 0; i < maxOuterIterations; i++) {
             double phiBefore = turretPhi;
@@ -204,32 +206,60 @@ public class Solver {
             BinarySearchResult binaryResult = binarySearchElevation(turretPhi, predictedTargetX,
                                                                      predictedTargetY, robotState, v0);
 
-            if (!binaryResult.found) {
-                return new SolverResult(turretPhi, bestTheta, v0, bestFlightTime, false,
-                                        "Elevation search failed to find solution");
-            }
+            if (binaryResult.found) {
+                bestTheta = binaryResult.theta;
+                bestFlightTime = binaryResult.flightTime;
 
-            bestTheta = binaryResult.theta;
-            bestFlightTime = binaryResult.flightTime;
+                predictedTargetX = targetX + targetState.vx * bestFlightTime;
+                predictedTargetY = targetY + targetState.vy * bestFlightTime;
 
-            predictedTargetX = targetX + targetState.vx * bestFlightTime;
-            predictedTargetY = targetY + targetState.vy * bestFlightTime;
+                double dx = predictedTargetX - robotState.x;
+                double dy = predictedTargetY - robotState.y;
+                double groundAngle = Math.atan2(dy, dx);
 
-            double dx = predictedTargetX - robotState.x;
-            double dy = predictedTargetY - robotState.y;
-            double groundAngle = Math.atan2(dy, dx);
+                double vHorizontal = v0 * Math.cos(bestTheta);
+                double correction = calculatePhiCorrection(groundAngle, turretPhi, robotState, vHorizontal);
 
-            double vHorizontal = v0 * Math.cos(bestTheta);
-            double correction = calculatePhiCorrection(groundAngle, turretPhi, robotState, vHorizontal);
+                turretPhi = groundAngle - correction;
 
-            turretPhi = groundAngle - correction;
+                // 计算当前解的误差
+                ProjectileParameters tempParams = params.copy();
+                tempParams.v0 = v0;
+                TrajectorySimulator simulator = new TrajectorySimulator(0.01);
+                TrajectorySimulator.TrajectoryResult landing = simulator.simulate(
+                    turretPhi, bestTheta, robotState.x, robotState.y, 0,
+                    robotState.vx, robotState.vy, tempParams
+                );
+                double error = Math.sqrt(
+                    Math.pow(landing.landingX - targetX, 2) +
+                    Math.pow(landing.landingY - targetY, 2)
+                );
 
-            if (Math.abs(turretPhi - phiBefore) < phiTolerance) {
-                break;
+                if (error < bestError) {
+                    bestError = error;
+                    bestResult = new SolverResult(turretPhi, bestTheta, v0, bestFlightTime, true, "Success");
+                }
+
+                if (Math.abs(turretPhi - phiBefore) < phiTolerance) {
+                    break;
+                }
+            } else {
+                // 内层搜索失败，尝试调整旋转角
+                turretPhi += Math.toRadians(5); // 尝试增加5度
+                if (turretPhi > Math.PI) {
+                    turretPhi -= 2 * Math.PI; // 保持在-pi~pi范围内
+                }
             }
         }
 
-        return new SolverResult(turretPhi, bestTheta, v0, bestFlightTime, true, "Success");
+        // 如果找到有效解，返回最佳解
+        if (bestResult != null) {
+            return bestResult;
+        }
+
+        // 所有尝试都失败，返回失败结果
+        return new SolverResult(turretPhi, bestTheta, v0, bestFlightTime, false,
+                                "Elevation search failed to find solution");
     }
     
     public SolverResult solveWithInitialPhi(double initialPhi,
@@ -256,6 +286,8 @@ public class Solver {
         double bestFlightTime = 0;
         double predictedTargetX = targetX;
         double predictedTargetY = targetY;
+        double bestError = Double.MAX_VALUE;
+        SolverResult bestResult = null;
 
         for (int i = 0; i < maxOuterIterations; i++) {
             double phiBefore = turretPhi;
@@ -263,32 +295,60 @@ public class Solver {
             BinarySearchVelocityResult velocityResult = binarySearchVelocity(turretPhi, predictedTargetX,
                                                                              predictedTargetY, robotState, fixedTheta);
 
-            if (!velocityResult.found) {
-                return new SolverResult(turretPhi, fixedTheta, bestV0, bestFlightTime, false,
-                                        "Velocity search failed to find solution");
-            }
+            if (velocityResult.found) {
+                bestV0 = velocityResult.v0;
+                bestFlightTime = velocityResult.flightTime;
 
-            bestV0 = velocityResult.v0;
-            bestFlightTime = velocityResult.flightTime;
+                predictedTargetX = targetX + targetState.vx * bestFlightTime;
+                predictedTargetY = targetY + targetState.vy * bestFlightTime;
 
-            predictedTargetX = targetX + targetState.vx * bestFlightTime;
-            predictedTargetY = targetY + targetState.vy * bestFlightTime;
+                double dx = predictedTargetX - robotState.x;
+                double dy = predictedTargetY - robotState.y;
+                double groundAngle = Math.atan2(dy, dx);
 
-            double dx = predictedTargetX - robotState.x;
-            double dy = predictedTargetY - robotState.y;
-            double groundAngle = Math.atan2(dy, dx);
+                double vHorizontal = bestV0 * Math.cos(fixedTheta);
+                double correction = calculatePhiCorrection(groundAngle, turretPhi, robotState, vHorizontal);
 
-            double vHorizontal = bestV0 * Math.cos(fixedTheta);
-            double correction = calculatePhiCorrection(groundAngle, turretPhi, robotState, vHorizontal);
+                turretPhi = groundAngle - correction;
 
-            turretPhi = groundAngle - correction;
+                // 计算当前解的误差
+                ProjectileParameters tempParams = params.copy();
+                tempParams.v0 = bestV0;
+                TrajectorySimulator simulator = new TrajectorySimulator(0.01);
+                TrajectorySimulator.TrajectoryResult landing = simulator.simulate(
+                    turretPhi, fixedTheta, robotState.x, robotState.y, 0,
+                    robotState.vx, robotState.vy, tempParams
+                );
+                double error = Math.sqrt(
+                    Math.pow(landing.landingX - targetX, 2) +
+                    Math.pow(landing.landingY - targetY, 2)
+                );
 
-            if (Math.abs(turretPhi - phiBefore) < phiTolerance) {
-                break;
+                if (error < bestError) {
+                    bestError = error;
+                    bestResult = new SolverResult(turretPhi, fixedTheta, bestV0, bestFlightTime, true, "Success");
+                }
+
+                if (Math.abs(turretPhi - phiBefore) < phiTolerance) {
+                    break;
+                }
+            } else {
+                // 内层搜索失败，尝试调整旋转角
+                turretPhi += Math.toRadians(5); // 尝试增加5度
+                if (turretPhi > Math.PI) {
+                    turretPhi -= 2 * Math.PI; // 保持在-pi~pi范围内
+                }
             }
         }
 
-        return new SolverResult(turretPhi, fixedTheta, bestV0, bestFlightTime, true, "Success");
+        // 如果找到有效解，返回最佳解
+        if (bestResult != null) {
+            return bestResult;
+        }
+
+        // 所有尝试都失败，返回失败结果
+        return new SolverResult(turretPhi, fixedTheta, bestV0, bestFlightTime, false,
+                                "Velocity search failed to find solution");
     }
 
     private double calculatePhiCorrection(double groundAngle, double turretPhi,
@@ -356,9 +416,9 @@ public class Solver {
             }
 
             if (landingDistance < predictedDistance) {
-                low = mid;
+                high = mid;   // 射程不足 → 减小仰角
             } else {
-                high = mid;
+                low = mid;    // 射程过大 → 增大仰角
             }
         }
 
