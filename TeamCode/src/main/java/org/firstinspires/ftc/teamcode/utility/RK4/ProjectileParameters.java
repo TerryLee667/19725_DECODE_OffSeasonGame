@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode.utility.RK4;
 
 public class ProjectileParameters {
     public double v0;
-    public double k;
-    public double n;
+    public double kx;
+    public double ky;
     public double m;
     public double g;
     public double deltaH;
@@ -12,8 +12,8 @@ public class ProjectileParameters {
 
     public ProjectileParameters() {
         this.v0 = 10.0;
-        this.k = 0.015;
-        this.n = 2.0;
+        this.kx = 0.015;
+        this.ky = 0.0;
         this.m = 0.1;
         this.g = 9.81;
         this.deltaH = 0.5;
@@ -21,10 +21,10 @@ public class ProjectileParameters {
         this.thetaMax = Math.toRadians(65);
     }
 
-    public ProjectileParameters(double v0, double k, double n, double m, double deltaH, double thetaMax) {
+    public ProjectileParameters(double v0, double kx, double ky, double m, double deltaH, double thetaMax) {
         this.v0 = v0;
-        this.k = k;
-        this.n = n;
+        this.kx = kx;
+        this.ky = ky;
         this.m = m;
         this.g = 9.81;
         this.deltaH = deltaH;
@@ -37,13 +37,13 @@ public class ProjectileParameters {
         return this;
     }
 
-    public ProjectileParameters withK(double k) {
-        this.k = k;
+    public ProjectileParameters withKx(double kx) {
+        this.kx = kx;
         return this;
     }
 
-    public ProjectileParameters withN(double n) {
-        this.n = n;
+    public ProjectileParameters withKy(double ky) {
+        this.ky = ky;
         return this;
     }
 
@@ -63,7 +63,7 @@ public class ProjectileParameters {
     }
 
     public ProjectileParameters copy() {
-        ProjectileParameters copy = new ProjectileParameters(v0, k, n, m, deltaH, thetaMax);
+        ProjectileParameters copy = new ProjectileParameters(v0, kx, ky, m, deltaH, thetaMax);
         copy.thetaMin = this.thetaMin;
         return copy;
     }

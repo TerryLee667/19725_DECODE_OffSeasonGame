@@ -19,10 +19,10 @@ public class TestRK4 {
         // 生成随机的 k, n 参数（使用更合理的范围，确保小球可以飞到3m）
         public ProjectileParameters generateRandomParameters() {
             ProjectileParameters params = new ProjectileParameters();
-            params.v0 = 10; // 使用10m/s初速度进行测试
             // 使用固定参数进行测试，便于调试
-            params.k = 0.0004;  // 显著减小k值，减小空气阻力
-            params.n = 2.0;   // 固定n值
+            params.v0 = 5;
+            params.kx = 0.001;  // 显著减小kx值，减小空气阻力
+            params.ky = 0.1;  // 初始升力为0
             params.m = 0.06;
             params.deltaH = 1; // 目标高度与炮口高度相同
             return params;
@@ -30,17 +30,16 @@ public class TestRK4 {
 
         // 生成实验数据：使用不同的初速度（收集数据时deltaH=0）
         // 注意：参数拟合算法设计为在固定45度仰角下通过不同初速度的数据来拟合k和n
-        public double[][] generateExperimentData(ProjectileParameters params, int numPoints) {
+        public double[][] generateExperimentData(ProjectileParameters params, int numPoints, double[] v0Values) {
             double[][] data = new double[numPoints][2];
-            double[] v0Values = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
             
             for (int i = 0; i < numPoints; i++) {
                 // 使用不同的初速度，固定45度仰角
                 double v0 = v0Values[i];
                 ProjectileParameters tempParams = new ProjectileParameters();
                 tempParams.v0 = v0;
-                tempParams.k = params.k;
-                tempParams.n = params.n;
+                tempParams.kx = params.kx;
+                tempParams.ky = params.ky;
                 tempParams.m = params.m;
                 tempParams.deltaH = 0; // 收集数据时deltaH=0
                 
@@ -123,7 +122,7 @@ public class TestRK4 {
         // 模拟小球轨迹并打印详细信息
         public void simulateAndPrintTrajectory(double theta, ProjectileParameters params) {
             System.out.println("模拟轨迹，仰角: " + Math.toDegrees(theta) + " 度");
-            System.out.println("参数: k=" + params.k + ", n=" + params.n + ", v0=" + params.v0 + ", deltaH=" + params.deltaH);
+            System.out.println("参数: kx=" + params.kx + ", ky=" + params.ky + ", v0=" + params.v0 + ", deltaH=" + params.deltaH);
             
             ProjectileState state = computeInitialState(0, theta, 0, 0, 0, 0, 0, params);
             double targetZ = params.deltaH;
@@ -224,15 +223,15 @@ public class TestRK4 {
             // 2. 生成随机参数
             ProjectileParameters trueParams = simulator.generateRandomParameters();
             System.out.println("真实参数:");
-            System.out.println("k = " + trueParams.k);
-            System.out.println("n = " + trueParams.n);
+            System.out.println("kx = " + trueParams.kx);
+            System.out.println("ky = " + trueParams.ky);
             System.out.println("v0 = " + trueParams.v0);
             System.out.println();
 
             // 3. 生成实验数据
-            int numPoints = 10;
-            double[] v0Values = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
-            double[][] experimentData = simulator.generateExperimentData(trueParams, numPoints);
+            int numPoints = 5;
+            double[] v0Values = {2, 3,4,5,6};
+            double[][] experimentData = simulator.generateExperimentData(trueParams, numPoints, v0Values);
             System.out.println("生成的实验数据:");
             for (double[] data : experimentData) {
                 System.out.printf("距离: %.1f m, 仰角: %.2f 度\n", data[0], data[1]);
@@ -257,25 +256,25 @@ public class TestRK4 {
             ParameterCalculator.CalculationResult fitResult = calculator.calculateFromCSV(basePath);
 
             System.out.println("拟合结果:");
-            System.out.println("拟合 k = " + fitResult.k);
-            System.out.println("拟合 n = " + fitResult.n);
+            System.out.println("拟合 kx = " + fitResult.kx);
+            System.out.println("拟合 ky = " + fitResult.ky);
             System.out.println("总误差 = " + fitResult.totalError);
             System.out.println("均方根误差 = " + fitResult.getRmse());
             System.out.println();
 
             // 6. 计算参数拟合误差
-            double kError = Math.abs(fitResult.k - trueParams.k) / trueParams.k * 100;
-            double nError = Math.abs(fitResult.n - trueParams.n) / trueParams.n * 100;
+            double kxError = Math.abs(fitResult.kx - trueParams.kx) / (trueParams.kx + 1e-10) * 100;
+            double kyError = Math.abs(fitResult.ky - trueParams.ky) / (trueParams.ky + 1e-10) * 100;
             System.out.println("参数拟合误差:");
-            System.out.printf("k 误差: %.2f%%\n", kError);
-            System.out.printf("n 误差: %.2f%%\n", nError);
+            System.out.printf("kx 误差: %.2f%%\n", kxError);
+            System.out.printf("ky 误差: %.2f%%\n", kyError);
             System.out.println();
 
             // 调试：直接测试Solver对各个角度的模拟
             System.out.println("调试：测试Solver模拟不同角度");
             TrajectorySimulator debugSim = new TrajectorySimulator(0.01); // 使用与TrajectorySimulator相同的时间步长
-            System.out.printf("使用 trueParams: k=%.4f, n=%.4f, v0=%.2f, deltaH=%.2f\n",
-                trueParams.k, trueParams.n, trueParams.v0, trueParams.deltaH);
+            System.out.printf("使用 trueParams: kx=%.4f, ky=%.4f, v0=%.2f, deltaH=%.2f\n",
+                trueParams.kx, trueParams.ky, trueParams.v0, trueParams.deltaH);
             for (double thetaDeg : new double[]{45, 50, 55, 60, 65}) {
                 double theta = Math.toRadians(thetaDeg);
                 TrajectorySimulator.TrajectoryResult result = debugSim.simulate(
@@ -284,8 +283,8 @@ public class TestRK4 {
                 System.out.printf("trueParams: theta=%.0f度: landing=(%.4f, %.4f), dist=%.4f, reached=%b\n",
                     thetaDeg, result.landingX, result.landingY, result.getHorizontalDistance(), result.reachedTargetHeight);
             }
-            System.out.printf("使用 fitParams: k=%.4f, n=%.4f, v0=%.2f, deltaH=%.2f\n",
-                fitParams.k, fitParams.n, fitParams.v0, fitParams.deltaH);
+            System.out.printf("使用 fitParams: kx=%.4f, ky=%.4f, v0=%.2f, deltaH=%.2f\n",
+                fitParams.kx, fitParams.ky, fitParams.v0, fitParams.deltaH);
             for (double thetaDeg : new double[]{45, 50, 55, 60, 65}) {
                 double theta = Math.toRadians(thetaDeg);
                 TrajectorySimulator.TrajectoryResult result = debugSim.simulate(
@@ -299,7 +298,7 @@ public class TestRK4 {
             System.out.println();
 
             // 7. 循环测试 AutoSelect 多次
-            AutoSelect autoSelect = new AutoSelect(fitParams);
+            AutoSelect autoSelect = new AutoSelect(fitParams, 0, 5, Math.toRadians(45), Math.toRadians(65));
             Random random = new Random();
             int testCount = 30; // 测试次数
             double totalError = 0;
@@ -310,8 +309,8 @@ public class TestRK4 {
             
             for (int testIndex = 0; testIndex < testCount; testIndex++) {
                 // 生成随机目标位置和小车速度
-                double targetX = 2.5 + random.nextDouble() * 3.0; // 2-6 米，均值3米
-                double targetY = -1.0 + random.nextDouble() * 2.0; // -1 到 1 米
+                double targetX = 2.0 + random.nextDouble() * 2.0; // 2-4 米
+                double targetY = 0; // -1 到 1 米
                 double robotVx = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
                 double robotVy = -0.5 + random.nextDouble() * 1.0; // -0.5 到 0.5 m/s
 
@@ -320,8 +319,8 @@ public class TestRK4 {
                 System.out.printf("小车速度: (%.2f, %.2f) m/s\n", robotVx, robotVy);
                 
                 // 测试合并模式（同时输入初始初速度和仰角）
-                double combinedInitialV0 = 7.5; // 合并模式的初始初速度
-                double combinedInitialTheta = Math.toRadians(52); // 合并模式的初始仰角
+                double combinedInitialV0 = 4; // 合并模式的初始初速度
+                double combinedInitialTheta = Math.toRadians(50); // 合并模式的初始仰角
                 AutoSelect.AutoSelectResult combinedResult = autoSelect.Select(targetX, targetY, robotVx, robotVy, combinedInitialV0, combinedInitialTheta);
                 System.out.println("合并模式结果:");
                 if (combinedResult.success) {

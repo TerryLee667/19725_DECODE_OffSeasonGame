@@ -17,12 +17,30 @@ AutoSelect autoSelect = new AutoSelect();
 ### 自定义参数构造函数
 ```java
 ProjectileParameters params = new ProjectileParameters();
-params.k = 0.0005;  // 阻力系数
-params.n = 2.0;     // 阻力指数
+params.kx = 0.0005;  // 阻力系数
+params.ky = 0.0001;  // 升力系数
 params.v0 = 10.0;   // 默认初速度
 params.deltaH = 1.0; // 高度差（炮口与目标）
 
 AutoSelect autoSelect = new AutoSelect(params);
+```
+
+### 自定义范围构造函数（新）
+```java
+ProjectileParameters params = new ProjectileParameters();
+params.kx = 0.0005;  // 阻力系数
+params.ky = 0.0001;  // 升力系数
+params.v0 = 10.0;   // 默认初速度
+params.deltaH = 1.0; // 高度差（炮口与目标）
+
+// 参数：物理参数, 初速度最小值, 初速度最大值, 仰角最小值, 仰角最大值
+AutoSelect autoSelect = new AutoSelect(
+    params, 
+    3.0,  // 最小初速度 (m/s)
+    9.0,  // 最大初速度 (m/s)
+    Math.toRadians(40),  // 最小仰角 (40度)
+    Math.toRadians(60)   // 最大仰角 (60度)
+);
 ```
 
 ## 主要方法
@@ -87,6 +105,45 @@ if (result.success) {
 }
 ```
 
+### 带自定义范围的使用（新）
+```java
+// 创建物理参数
+ProjectileParameters params = new ProjectileParameters();
+params.kx = 0.0004;  // 阻力系数
+params.ky = 0.0001;  // 升力系数
+params.v0 = 8.0;    // 默认初速度
+params.deltaH = 1.0; // 高度差（炮口与目标）
+
+// 创建AutoSelect实例并设定范围
+// 参数：物理参数, 初速度最小值, 初速度最大值, 仰角最小值, 仰角最大值
+AutoSelect autoSelect = new AutoSelect(
+    params, 
+    3.0,  // 最小初速度 (m/s)
+    9.0,  // 最大初速度 (m/s)
+    Math.toRadians(40),  // 最小仰角 (40度)
+    Math.toRadians(60)   // 最大仰角 (60度)
+);
+
+// 设置目标位置和机器人速度
+double targetX = 4.5;  // 目标X坐标（m）
+double targetY = 0.3;  // 目标Y坐标（m）
+double robotVx = -0.5; // 机器人X速度（m/s）
+double robotVy = 0.2;  // 机器人Y速度（m/s）
+
+// 使用合并模式（同时输入初始初速度和仰角）
+double initialV0 = 6.0;     // 初始初速度（m/s）
+double initialTheta = Math.toRadians(50); // 初始仰角（50度）
+AutoSelectResult result = autoSelect.Select(targetX, targetY, robotVx, robotVy, initialV0, initialTheta);
+
+if (result.success) {
+    System.out.printf("仰角: %.2f 度\n", result.getThetaDegrees());
+    System.out.printf("初速度: %.2f m/s\n", result.v0);
+    System.out.printf("旋转角: %.2f 度\n", result.getTurretPhiDegrees());
+} else {
+    System.out.println("求解失败: " + result.message);
+}
+```
+
 ## 配置方法
 
 ### 设置最优初速度列表
@@ -135,8 +192,8 @@ autoSelect.setDeltaH(1.0); // 炮口与目标的高度差（m）
    - 角度：弧度（rad），显示时转换为度数
 
 3. **参数范围**：
-   - 初速度范围：0.0 - 10.0 m/s
-   - 仰角范围：45 - 65度
+   - 初速度范围：可在构造时自定义（默认 0.0 - 10.0 m/s）
+   - 仰角范围：可在构造时自定义（默认 45 - 65度）
    - 超出范围的参数将被拒绝
 
 4. **求解失败处理**：

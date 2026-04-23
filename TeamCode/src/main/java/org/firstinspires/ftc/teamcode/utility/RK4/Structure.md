@@ -49,31 +49,33 @@ RK4跑打算法是一个用于FTC（FIRST Tech Challenge）机器人射击系统
 dx/dt = vx
 dy/dt = vy
 dz/dt = vz
-dvx/dt = -k/m · v^(n-1) · vx
-dvy/dt = -k/m · v^(n-1) · vy
-dvz/dt = -k/m · v^(n-1) · vz - g
+dvx/dt = -kx/m · v · vx
+dvy/dt = -kx/m · v · vy
+dvz/dt = -kx/m · v · vz + ky/m · v - g
 ```
 
 其中：
 - `(x, y, z)`：位置坐标（米）
 - `(vx, vy, vz)`：速度分量（米/秒）
 - `v = √(vx² + vy² + vz²)`：总速度
-- `k`：空气阻力系数
-- `n`：阻力指数（通常为2.0）
+- `kx`：空气阻力系数
+- `ky`：空气升力系数
 - `m`：小球质量（公斤）
 - `g`：重力加速度（9.81 m/s²）
 
-#### 阻力模型
+#### 阻力和升力模型
 
-采用非线性阻力模型：
+采用线性阻力模型和升力模型：
 
 ```
-F_drag = -k · vⁿ · v̂
+F_drag = -kx · v · v̂
+F_lift = ky · v · ẑ
 ```
 
-- 当 n = 2 时，为二次阻力模型（高速运动）
-- 当 n = 1 时，为线性阻力模型（低速运动）
-- 实际应用中 n 通常在 1.5-2.5 之间
+- `F_drag`：阻力，方向与速度相反
+- `F_lift`：升力，方向竖直向上
+- `kx`：阻力系数，范围 0~0.1
+- `ky`：升力系数，范围 0~0.5
 
 #### 初始条件
 
@@ -223,8 +225,8 @@ f(t, y) = [vx, vy, vz, ax, ay, az]
 **主要字段**：
 ```java
 public double v0;        // 初速度（m/s）
-public double k;         // 阻力系数
-public double n;         // 阻力指数
+public double kx;        // 阻力系数
+public double ky;        // 升力系数
 public double m;         // 小球质量（kg）
 public double g;         // 重力加速度（m/s²）
 public double deltaH;     // 高度差（m）
@@ -236,8 +238,8 @@ public double thetaMin;   // 最小仰角（弧度）
 
 **默认值**：
 - v₀ = 10.0 m/s
-- k = 0.015
-- n = 2.0
+- kx = 0.015
+- ky = 0.0
 - m = 0.1 kg
 - g = 9.81 m/s²
 - deltaH = 0.5 m
@@ -274,12 +276,17 @@ public static double[] computeDerivatives(
 
 **计算逻辑**：
 1. 计算总速度：`v = √(vx² + vy² + vz²)`
-2. 计算阻力因子：`dragFactor = -k/m · v^(n-1)`
-3. 计算加速度分量：
-   - `ax = dragFactor · vx`
-   - `ay = dragFactor · vy`
-   - `az = dragFactor · vz - g`
-4. 返回导数向量：`[vx, vy, vz, ax, ay, az]`
+2. 计算阻力分量（方向与速度相反）：
+   - `dragForceX = -kx · v · vx`
+   - `dragForceY = -kx · v · vy`
+   - `dragForceZ = -kx · v · vz`
+3. 计算升力分量（方向竖直向上）：
+   - `liftForceZ = ky · v`
+4. 计算加速度分量：
+   - `ax = dragForceX / m`
+   - `ay = dragForceY / m`
+   - `az = (dragForceZ + liftForceZ) / m - g`
+5. 返回导数向量：`[vx, vy, vz, ax, ay, az]`
 
 #### TrajectorySimulator（轨迹仿真器）
 
@@ -802,10 +809,12 @@ correction = (robotVy·cos(groundAngle) - robotVx·sin(groundAngle)) / v_horizon
    - 考虑发射机构的一致性
    - 建议范围：6-10 m/s
 
-2. **阻力参数k和n**：
+2. **阻力参数kx和升力参数ky**：
    - 使用固定仰角（45度）进行拟合
    - 测量多个距离的落点
    - 使用最小二乘法拟合
+   - kx范围：0~0.1
+   - ky范围：0~0.5
 
 3. **高度差deltaH**：
    - 精确测量炮口高度

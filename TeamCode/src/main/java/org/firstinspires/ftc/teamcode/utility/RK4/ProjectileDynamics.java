@@ -16,11 +16,18 @@ public class ProjectileDynamics {
             };
         }
 
-        double dragFactor = -params.k / params.m * Math.pow(speed, params.n - 1);
+        // 计算阻力：kx * v（方向与v相反）
+        double dragForceX = -params.kx * speed * state.vx / speed;
+        double dragForceY = -params.kx * speed * state.vy / speed;
+        double dragForceZ = -params.kx * speed * state.vz / speed;
 
-        double ax = dragFactor * state.vx;
-        double ay = dragFactor * state.vy;
-        double az = dragFactor * state.vz - params.g;
+        // 计算升力：ky * v（方向竖直向上）
+        double liftForceZ = params.ky * speed;
+
+        // 计算加速度
+        double ax = dragForceX / params.m;
+        double ay = dragForceY / params.m;
+        double az = (dragForceZ + liftForceZ) / params.m - params.g;
 
         return new double[]{
             state.vx,
