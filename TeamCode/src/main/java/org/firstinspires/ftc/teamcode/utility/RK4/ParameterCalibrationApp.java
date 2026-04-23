@@ -39,8 +39,8 @@ public class ParameterCalibrationApp {
         System.out.println("===== 标定结果 =====");
         if (result.success) {
             System.out.printf("初速度 (v0): %.3f m/s (手动设置)\n", result.v0);
-            System.out.printf("阻力系数 (k): %.6f\n", result.k);
-            System.out.printf("速度指数 (n): %.3f\n", result.n);
+            System.out.printf("阻力系数 (kx): %.6f\n", result.kx);
+            System.out.printf("升力系数 (ky): %.6f\n", result.ky);
             System.out.printf("拟合总误差: %.6f\n", result.totalError);
             System.out.printf("均方根误差: %.6f\n", result.getRmse());
             System.out.printf("阻力参数数据点: %d\n", result.dragDataPoints);
@@ -50,8 +50,8 @@ public class ParameterCalibrationApp {
             System.out.println("===== 推荐代码 =====");
             System.out.println("// 在比赛代码中使用以下参数:");
             System.out.printf("params.v0 = %.3f; // 手动设置的初速度\n", result.v0);
-            System.out.printf("params.k = %.6f;\n", result.k);
-            System.out.printf("params.n = %.3f;\n", result.n);
+            System.out.printf("params.kx = %.6f;\n", result.kx);
+            System.out.printf("params.ky = %.6f;\n", result.ky);
         } else {
             System.out.println("状态: 失败");
             System.out.println("错误: " + result.message);

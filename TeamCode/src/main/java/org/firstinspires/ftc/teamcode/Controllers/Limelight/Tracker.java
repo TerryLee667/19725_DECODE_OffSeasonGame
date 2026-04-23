@@ -164,8 +164,8 @@ public class Tracker {
                 }
             }
 
-            if (matchedTarget != null) {
-                matchedTarget.updateGroupAndMembers(group, confirmationFrames);
+                if (matchedTarget != null) {
+                matchedTarget.updateGroupAndMembers(group, tracker.confirmationFrames);
                 matchedTarget.lastSeenTimestamp = System.currentTimeMillis();
                 matchedTargets.add(matchedTarget);
                 removalPending.remove(matchedTarget);
@@ -229,9 +229,9 @@ public class Tracker {
                 matchedCandidate.consecutiveMisses = 0;
                 matchedCandidates.add(matchedCandidate);
 
-                if (matchedCandidate.consecutiveFrames >= confirmationFrames) {
+                if (matchedCandidate.consecutiveFrames >= tracker.confirmationFrames) {
                     Target newTarget = new Target(nextTargetId++);
-                    newTarget.updateGroupAndMembers(matchedCandidate.members, confirmationFrames);
+                    newTarget.updateGroupAndMembers(matchedCandidate.members, tracker.confirmationFrames);
                     targets.add(newTarget);
                     toRemove.add(matchedCandidate);
                 }
@@ -268,8 +268,7 @@ public class Tracker {
         for (Map.Entry<Target, Integer> entry : removalPending.entrySet()) {
             Target target = entry.getKey();
             int count = entry.getValue();
-
-            if (count >= removalFrames && target.getActiveMemberCount(confirmationFrames) == 0) {
+            if (count >= tracker.removalFrames && target.getActiveMemberCount(tracker.confirmationFrames) == 0) {
                 toRemove.add(target);
             }
         }
@@ -296,7 +295,7 @@ public class Tracker {
 
         for (Target target : targets) {
             if (target.isEmpty()) continue;
-            if (target.getActiveMemberCount(confirmationFrames) == 0) continue;
+            if (target.getActiveMemberCount(tracker.confirmationFrames) == 0) continue;
             double score = computeTargetScore(target);
             if (score > bestScore) {
                 bestScore = score;
@@ -314,7 +313,7 @@ public class Tracker {
      * @return 目标得分
      */
     private double computeTargetScore(Target target) {
-        int memberCount = target.getActiveMemberCount(confirmationFrames);
+        int memberCount = target.getActiveMemberCount(tracker.confirmationFrames);
         double distance = Math.sqrt(Math.pow(target.centerX, 2) + Math.pow(target.centerY, 2));
         if (distance == 0) {
             distance = 0.1;

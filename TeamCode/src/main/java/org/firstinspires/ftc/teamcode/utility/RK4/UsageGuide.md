@@ -10,7 +10,7 @@
   - [2.1 快速标定（推荐）](#21-快速标定推荐)
   - [2.2 手动标定](#22-手动标定)
   - [2.3 初速度 v0 测定](#23-初速度-v0-测定)
-  - [2.4 阻力参数 k 和 n 测定](#24-阻力参数-k-和-n-测定)
+  - [2.4 阻力参数 kx 和 ky 测定](#24-阻力参数-kx-和-ky-测定)
 - [3. 预测角度使用方法](#3-预测角度使用方法)
   - [3.0 高度差处理说明](#30-高度差处理说明)
   - [3.1 基本使用](#31-基本使用)
@@ -112,7 +112,7 @@ RK4 跑打算法由以下核心组件组成：
 | 类 | 依赖 | 说明 |
 |---|------|------|
 | **ProjectileState** | 无 | 小球运动状态（位置、速度、时间） |
-| **ProjectileParameters** | 无 | 物理参数（v₀, k, n, m, g, Δh） |
+| **ProjectileParameters** | 无 | 物理参数（v₀, kx, ky, m, g, Δh） |
 | **ProjectileDynamics** | ProjectileState, ProjectileParameters | 运动微分方程，计算加速度 |
 | **TrajectorySimulator** | ProjectileState, ProjectileParameters, ProjectileDynamics | RK4 数值积分，仿真轨迹 |
 | **RobotState** | 无 | 机器人状态（位置、速度） |
@@ -165,7 +165,7 @@ RK4 跑打算法由以下核心组件组成：
 #### 准备工作
 
 1. **采集实验数据**：
-   - 阻力参数数据：在不同距离设置靶标，调整仰角直到命中，记录 `(距离, 仰角)` 数据对
+   - 阻力和升力参数数据：在不同距离设置靶标，调整仰角直到命中，记录 `(距离, 仰角)` 数据对
 
 2. **准备 CSV 文件**：
    - `drag_calibration.csv`：每行两个数据点，格式为 `距离, 仰角（度）`
@@ -195,8 +195,8 @@ java -cp "./out;./TeamCode/src/main/java" org.firstinspires.ftc.teamcode.utility
 =====================================
 ===== 标定结果 =====
 初速度 (v0): 7.500 m/s (手动设置)
-阻力系数 (k): 0.012500
-速度指数 (n): 1.950
+阻力系数 (kx): 0.012500
+升力系数 (ky): 0.005000
 拟合总误差: 0.001234
 均方根误差: 0.015811
 阻力参数数据点: 5
@@ -204,8 +204,8 @@ java -cp "./out;./TeamCode/src/main/java" org.firstinspires.ftc.teamcode.utility
 
 ===== 推荐代码 =====
 params.v0 = 7.500; // 手动设置的初速度
-params.k = 0.012500;
-params.n = 1.950;
+params.kx = 0.012500;
+params.ky = 0.005000;
 =====================================
 ```
 
@@ -236,7 +236,7 @@ params.deltaH = 0.2; // 炮口高度
 System.out.println("手动设置的初速度: " + params.v0 + " m/s");
 ```
 
-### 2.4 阻力参数 k 和 n 测定
+### 2.4 阻力参数 kx 和 ky 测定
 
 **目的**：通过不同距离的射击数据拟合空气阻力模型。
 
@@ -269,8 +269,7 @@ CalibrationHelper.CalibrationData result = calibrator.fitDragParameters(rangeAng
 
 // 输出结果
 System.out.println("拟合得到的阻力参数:");
-System.out.println("k: " + result.k);
-System.out.println("n: " + result.n);
+System.out.println("kx: " + result.k);
 System.out.println("拟合误差: " + result.totalError);
 ```
 
@@ -311,8 +310,8 @@ Solver solver = new Solver();
 // 2.1 基本用法：单参数配置
 ProjectileParameters params = new ProjectileParameters();
 params.v0 = 6.0;    // 已标定的初速度
-params.k = 0.015;   // 已标定的阻力系数
-params.n = 2.0;     // 已标定的速度指数
+params.kx = 0.015;   // 已标定的阻力系数
+params.ky = 0.005;   // 已标定的升力系数
 params.m = 0.1;     // 小球质量（公斤）
 params.deltaH = 0.5; // 炮口与目标高度差（米）- 只考虑高度差，不考虑绝对高度
 params.thetaMax = Math.PI / 4; // 最大仰角（45度）
@@ -363,8 +362,8 @@ Solver solver = new Solver();
 // 2.1 基本用法：单参数配置
 ProjectileParameters params = new ProjectileParameters();
 params.v0 = 6.0;    // 已标定的初速度
-params.k = 0.015;   // 已标定的阻力系数
-params.n = 2.0;     // 已标定的速度指数
+params.kx = 0.015;   // 已标定的阻力系数
+params.ky = 0.005;   // 已标定的升力系数
 params.m = 0.1;     // 小球质量（公斤）
 params.deltaH = 0.5; // 炮口与目标高度差（米）- 只考虑高度差，不考虑绝对高度
 params.thetaMax = Math.PI / 4; // 最大仰角（45度）
@@ -465,12 +464,12 @@ public void runOpMode() {
     Solver solver = new Solver();
     ProjectileParameters params = new ProjectileParameters();
     // 设置标定后的参数
-    params.v0 = 6.2;
-    params.k = 0.012;
-    params.n = 1.9;
-    params.m = 0.1;
-    params.deltaH = 0.45; // 炮口与目标高度差
-    params.thetaMax = Math.PI / 4;
+params.v0 = 6.2;
+params.kx = 0.012;
+params.ky = 0.003;
+params.m = 0.1;
+params.deltaH = 0.45; // 炮口与目标高度差
+params.thetaMax = Math.PI / 4;
     solver.setParameters(params);
     
     Limelight3A limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -598,9 +597,9 @@ while (opModeIsActive()) {
 **代码示例**：
 ```java
 // 创建不同参数集
-ProjectileParameters normalParams = new ProjectileParameters(6.0, 0.015, 2.0, 0.1, 0.5, Math.PI / 4);
-ProjectileParameters highPowerParams = new ProjectileParameters(7.0, 0.018, 2.0, 0.1, 0.5, Math.PI / 3);
-ProjectileParameters lowPowerParams = new ProjectileParameters(5.0, 0.012, 2.0, 0.1, 0.5, Math.PI / 4);
+ProjectileParameters normalParams = new ProjectileParameters(6.0, 0.015, 0.005, 0.1, 0.5, Math.PI / 4);
+ProjectileParameters highPowerParams = new ProjectileParameters(7.0, 0.018, 0.006, 0.1, 0.5, Math.PI / 3);
+ProjectileParameters lowPowerParams = new ProjectileParameters(5.0, 0.012, 0.004, 0.1, 0.5, Math.PI / 4);
 
 // 添加参数集到求解器
 solver.addParameterSet("normal", normalParams);
@@ -670,7 +669,7 @@ System.out.println("初速度范围: " + v0Range[0] + "-" + v0Range[1] + " m/s")
 | 问题 | 原因 | 解决方案 |
 |------|------|----------|
 | 求解失败 | 目标超出射程 | 减小目标距离或调整发射参数 |
-| 命中率低 | 阻力参数不准确 | 重新标定阻力参数 k 和 n |
+| 命中率低 | 阻力参数不准确 | 重新标定阻力参数 kx 和 ky |
 | 实时性差 | 计算开销大 | 优化求解器参数，减少迭代次数 |
 | 角度抖动 | 目标位置数据噪声 | 对视觉数据进行低通滤波 |
 
@@ -683,6 +682,8 @@ System.out.println("初速度范围: " + v0Range[0] + "-" + v0Range[1] + " m/s")
 - **合并模式**：同时输入初始初速度和仰角值，使用二分法算法同时优化初速度和仰角
 
 ### 5.2 使用示例
+
+#### 基本使用
 
 ```java
 // 1. 创建 AutoSelect 实例
@@ -712,7 +713,51 @@ if (result.success) {
 }
 ```
 
+#### 构造时设定范围
+
+```java
+// 1. 创建物理参数
+ProjectileParameters params = new ProjectileParameters();
+params.v0 = 8.0;     // 初速度
+params.kx = 0.0004;   // 阻力系数
+params.ky = 0.0001;   // 升力系数
+params.m = 0.1;      // 小球质量
+params.deltaH = 1.0; // 高度差
+
+// 2. 创建 AutoSelect 实例并设定范围
+// 参数：物理参数, 初速度最小值, 初速度最大值, 仰角最小值, 仰角最大值
+AutoSelect autoSelect = new AutoSelect(
+    params, 
+    3.0,  // 最小初速度 (m/s)
+    9.0,  // 最大初速度 (m/s)
+    Math.toRadians(40),  // 最小仰角 (40度)
+    Math.toRadians(60)   // 最大仰角 (60度)
+);
+
+// 3. 使用合并模式
+// 同时输入初始初速度和仰角
+double initialV0 = 6.0;     // 初始初速度（m/s）
+double initialTheta = Math.toRadians(50); // 初始仰角（50度）
+AutoSelect.AutoSelectResult result = autoSelect.Select(relativeX, relativeY, robotVx, robotVy, initialV0, initialTheta);
+```
+
 ### 5.3 自定义配置
+
+#### 方法一：使用构造时设定范围
+
+```java
+// 创建 AutoSelect 实例并设定范围
+// 参数：物理参数, 初速度最小值, 初速度最大值, 仰角最小值, 仰角最大值
+AutoSelect autoSelect = new AutoSelect(
+    params, 
+    3.0,  // 最小初速度 (m/s)
+    9.0,  // 最大初速度 (m/s)
+    Math.toRadians(40),  // 最小仰角 (40度)
+    Math.toRadians(60)   // 最大仰角 (60度)
+);
+```
+
+#### 方法二：使用 setter 方法设定范围
 
 ```java
 // 自定义最优初速度列表
@@ -728,22 +773,22 @@ List<Double> customThetaList = Arrays.asList(
 autoSelect.setOptimalThetaList(customThetaList);
 
 // 自定义初速度范围
-autoSelect.setV0Range(0.0, 10.0); // 最小 0.0 m/s，最大 10.0 m/s
+autoSelect.setV0Range(3.0, 9.0); // 最小 3.0 m/s，最大 9.0 m/s
 
 // 自定义仰角范围（弧度）
-autoSelect.setThetaRange(Math.toRadians(45), Math.toRadians(65)); // 45-65 度
+autoSelect.setThetaRange(Math.toRadians(40), Math.toRadians(60)); // 40-60 度
 ```
 
 ### 5.4 注意事项
 
 1. **参数范围**：
-   - 初速度范围：0.0 - 10.0 m/s
-   - 仰角范围：45 - 65度
+   - 初速度范围：可在构造时自定义（默认 0.0 - 10.0 m/s）
+   - 仰角范围：可在构造时自定义（默认 45 - 65度）
    - 超出范围的参数将被拒绝
 
 2. **初始值选择**：
-   - 初始初速度应选择在硬件允许的范围内（0.0-10.0 m/s）
-   - 初始仰角应选择在45-65度范围内
+   - 初始初速度应选择在硬件允许的范围内
+   - 初始仰角应选择在设定的仰角范围内
 
 3. **优化算法**：
    - 使用二分法同时优化初速度和仰角
@@ -773,19 +818,26 @@ public class ShootingController extends LinearOpMode {
         solver = new Solver();
         
         // 设置物理参数（使用标定结果）
-        params = new ProjectileParameters();
-        params.v0 = 8.0;     // 初速度（米/秒）
-        params.k = 0.0004;   // 阻力系数
-        params.n = 2.0;      // 速度指数
-        params.m = 0.1;      // 小球质量（公斤）
-        params.deltaH = 1.0; // 炮口与目标高度差（米）
-        solver.setParameters(params);
+params = new ProjectileParameters();
+params.v0 = 8.0;     // 初速度（米/秒）
+params.kx = 0.0004;   // 阻力系数
+params.ky = 0.0001;   // 升力系数
+params.m = 0.1;      // 小球质量（公斤）
+params.deltaH = 1.0; // 炮口与目标高度差（米）
+solver.setParameters(params);
         
         // 初始化 Limelight
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         
-        // 初始化AutoSelect
-        autoSelect = new AutoSelect(params);
+        // 初始化AutoSelect（带自定义范围）
+        // 参数：物理参数, 初速度最小值, 初速度最大值, 仰角最小值, 仰角最大值
+        autoSelect = new AutoSelect(
+            params, 
+            3.0,  // 最小初速度 (m/s)
+            9.0,  // 最大初速度 (m/s)
+            Math.toRadians(40),  // 最小仰角 (40度)
+            Math.toRadians(60)   // 最大仰角 (60度)
+        );
         
         telemetry.addLine("准备就绪，按 START 开始");
         telemetry.update();
@@ -860,7 +912,7 @@ public class ShootingController extends LinearOpMode {
 
 RK4 跑打算法通过考虑小车速度、目标运动和空气阻力，能够精确计算炮台角度，提高命中率。使用时需要：
 
-1. **首先进行参数标定**：测定初速度 v0 和阻力参数 k、n
+1. **首先进行参数标定**：测定初速度 v0 和阻力参数 kx、ky
 2. **设置合理的物理参数**：根据实际硬件情况调整
 3. **实时更新状态**：持续获取机器人和目标的最新状态
 4. **优化性能**：根据硬件能力调整计算精度

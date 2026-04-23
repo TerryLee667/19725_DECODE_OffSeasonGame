@@ -17,43 +17,44 @@ public class CalibrationHelper {
 
 
     public CalibrationData fitDragParameters(double[][] v0RangeAngleData, ProjectileParameters params) {
-        double bestK = params.k;
-        double bestN = params.n;
+        double bestKx = params.kx;
+        double bestKy = params.ky;
         double bestError = Double.MAX_VALUE;
 
-        // 第一阶段：粗略搜索整个参数空间（扩大范围，包括更小的k值）
-        for (double n = 1.0; n <= 3.0; n += 0.1) {
-            for (double k = 0.0001; k <= 0.01; k += 0.0001) { // 更细的k步长，包括更小的值
-                double error = calculateFitError(v0RangeAngleData, k, n, params.m);
+        // 第一阶段：粗略搜索整个参数空间
+        for (double kx = 0; kx <= 0.1; kx += 0.005) { // kx范围：0~0.1
+            for (double ky = 0; ky <= 0.5; ky += 0.025) { // ky范围：0~0.5
+                double error = calculateFitError(v0RangeAngleData, kx, ky, params.m);
                 if (error < bestError) {
                     bestError = error;
-                    bestK = k;
-                    bestN = n;
+                    bestKx = kx;
+                    bestKy = ky;
                 }
             }
         }
 
         // 第二阶段：在最优区域附近精细搜索
-        double coarseK = bestK;
-        double coarseN = bestN;
+        double coarseKx = bestKx;
+        double coarseKy = bestKy;
         
-        for (double n = coarseN - 0.2; n <= coarseN + 0.2; n += 0.01) { // 更细的n步长
-            if (n < 0.5 || n > 4.0) continue;
-            for (double k = Math.max(0.00005, coarseK - 0.001); k <= Math.min(0.02, coarseK + 0.001); k += 0.00005) { // 更细的k步长
-                double error = calculateFitError(v0RangeAngleData, k, n, params.m);
+        for (double kx = Math.max(0, coarseKx - 0.01); kx <= Math.min(0.1, coarseKx + 0.01); kx += 0.001) { // 更细的kx步长
+            for (double ky = Math.max(0, coarseKy - 0.05); ky <= Math.min(0.5, coarseKy + 0.05); ky += 0.005) { // 更细的ky步长
+                double error = calculateFitError(v0RangeAngleData, kx, ky, params.m);
                 if (error < bestError) {
                     bestError = error;
-                    bestK = k;
-                    bestN = n;
+                    bestKx = kx;
+                    bestKy = ky;
                 }
             }
         }
 
-        return new CalibrationData(bestK, bestN, bestError);
+        // 由于CalibrationData只返回k，我们将bestKx作为k返回，bestKy需要在调用处单独处理
+        params.ky = bestKy;
+        return new CalibrationData(bestKx, bestError);
     }
 
     // 计算拟合误差
-    private double calculateFitError(double[][] v0RangeAngleData, double k, double n, double m) {
+    private double calculateFitError(double[][] v0RangeAngleData, double kx, double ky, double m) {
         double totalError = 0;
         
         for (int i = 0; i < v0RangeAngleData.length; i++) {
@@ -62,7 +63,7 @@ public class CalibrationHelper {
             double angle = v0RangeAngleData[i][2];
             
             // 创建测试参数
-            ProjectileParameters testParams = new ProjectileParameters(0, k, n, m, 0, angle);
+            ProjectileParameters testParams = new ProjectileParameters(0, kx, ky, m, 0, angle);
             testParams.v0 = v0;
             
             // 模拟轨迹
@@ -83,12 +84,10 @@ public class CalibrationHelper {
 
     public static class CalibrationData {
         public final double k;
-        public final double n;
         public final double totalError;
 
-        public CalibrationData(double k, double n, double totalError) {
+        public CalibrationData(double k, double totalError) {
             this.k = k;
-            this.n = n;
             this.totalError = totalError;
         }
 

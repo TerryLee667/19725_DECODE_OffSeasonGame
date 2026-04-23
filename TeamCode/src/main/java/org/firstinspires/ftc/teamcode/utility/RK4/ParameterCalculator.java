@@ -38,14 +38,13 @@ public class ParameterCalculator {
             // 拟合阻力参数（使用CSV中的v0数据）
             CalibrationHelper.CalibrationData dragResult = calibrator.fitDragParameters(v0RangeAngleData, params);
             
-            // 更新参数
-            params.k = dragResult.k;
-            params.n = dragResult.n;
+            // 更新参数（ky已经在fitDragParameters中更新）
+            params.kx = dragResult.k;
             
             return new CalculationResult(
                 params.v0,
                 dragResult.k,
-                dragResult.n,
+                params.ky, // 使用拟合得到的ky值
                 dragResult.totalError,
                 0, // 不再使用初速度标定数据
                 v0RangeAngleData.length,
@@ -169,20 +168,20 @@ public class ParameterCalculator {
 
     public static class CalculationResult {
         public final double v0;
-        public final double k;
-        public final double n;
+        public final double kx;
+        public final double ky;
         public final double totalError;
         public final int velocityDataPoints;
         public final int dragDataPoints;
         public final boolean success;
         public final String message;
 
-        public CalculationResult(double v0, double k, double n, double totalError,
+        public CalculationResult(double v0, double kx, double ky, double totalError,
                                 int velocityDataPoints, int dragDataPoints,
                                 boolean success, String message) {
             this.v0 = v0;
-            this.k = k;
-            this.n = n;
+            this.kx = kx;
+            this.ky = ky;
             this.totalError = totalError;
             this.velocityDataPoints = velocityDataPoints;
             this.dragDataPoints = dragDataPoints;
@@ -206,14 +205,14 @@ public class ParameterCalculator {
             return String.format(
                 "Parameter Calculation Result:\n" +
                 "- Initial Velocity (v0): %.3f m/s\n" +
-                "- Drag Coefficient (k): %.6f\n" +
-                "- Velocity Exponent (n): %.3f\n" +
+                "- Drag Coefficient (kx): %.6f\n" +
+                "- Lift Coefficient (ky): %.6f\n" +
                 "- Total Fit Error: %.6f\n" +
                 "- RMSE: %.6f\n" +
                 "- Velocity Data Points: %d\n" +
                 "- Drag Data Points: %d\n" +
                 "- Status: %s",
-                v0, k, n, totalError, getRmse(),
+                v0, kx, ky, totalError, getRmse(),
                 velocityDataPoints, dragDataPoints, message
             );
         }
@@ -243,8 +242,8 @@ public class ParameterCalculator {
             // 保存参数到配置文件
             System.out.println("\nRecommended parameters for ProjectileParameters:");
             System.out.println("params.v0 = " + result.v0 + "; // 手动设置的初速度");
-            System.out.println("params.k = " + result.k + ";");
-            System.out.println("params.n = " + result.n + ";");
+            System.out.println("params.kx = " + result.kx + ";");
+            System.out.println("params.ky = " + result.ky + ";");
         }
     }
 }

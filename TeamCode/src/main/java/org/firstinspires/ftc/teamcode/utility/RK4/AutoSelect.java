@@ -25,8 +25,12 @@ public class AutoSelect {
         this.thetaMin = Math.toRadians(45);
         this.thetaMax = Math.toRadians(65);
         
+        // 设置Solver的范围
+        solver.setYawModeThetaRange(thetaMin, thetaMax);
+        solver.setVelModeThetaRange(thetaMin, thetaMax);
+        solver.setV0Range(v0Min, v0Max);
+        
         // 初始化最优初速度列表和最优仰角列表
-        initializeOptimalLists();
     }
 
     public AutoSelect(ProjectileParameters params) {
@@ -40,26 +44,29 @@ public class AutoSelect {
         this.thetaMin = Math.toRadians(45);
         this.thetaMax = Math.toRadians(65);
         
-        // 初始化最优初速度列表和最优仰角列表
-        initializeOptimalLists();
+        // 设置Solver的范围
+        solver.setYawModeThetaRange(thetaMin, thetaMax);
+        solver.setVelModeThetaRange(thetaMin, thetaMax);
+        solver.setV0Range(v0Min, v0Max);
+    }
+    
+    public AutoSelect(ProjectileParameters params, double v0Min, double v0Max, double thetaMin, double thetaMax) {
+        this.params = params;
+        this.params.thetaMax = thetaMax; // 确保ProjectileParameters中的thetaMax与设定一致
+        this.solver = new Solver(params);
+        this.optimalV0List = new ArrayList<>();
+        this.optimalThetaList = new ArrayList<>();
+        this.v0Min = v0Min; // 最小初速度
+        this.v0Max = v0Max; // 最大初速度
+        this.thetaMin = thetaMin;
+        this.thetaMax = thetaMax;
+        
+        // 设置Solver的范围
+        solver.setYawModeThetaRange(thetaMin, thetaMax);
+        solver.setVelModeThetaRange(thetaMin, thetaMax);
+        solver.setV0Range(v0Min, v0Max);
     }
 
-        private void initializeOptimalLists() {
-        // 最优初速度列表：从较小值开始，逐步增大
-        optimalV0List.add(8.0);
-        optimalV0List.add(10.0);
-        optimalV0List.add(12.0);
-        optimalV0List.add(2.0);
-        optimalV0List.add(4.0);
-        optimalV0List.add(6.0);
-        
-        // 最优仰角列表（弧度）：首选55度（最大射程仰角）
-        optimalThetaList.add(Math.toRadians(55));
-        optimalThetaList.add(Math.toRadians(50));
-        optimalThetaList.add(Math.toRadians(60));
-        optimalThetaList.add(Math.toRadians(45));
-        optimalThetaList.add(Math.toRadians(65));
-    }
 
     // 合并模式：同时输入初始初速度和仰角，使用二分法同时优化
     public AutoSelectResult Select(double relativeX, double relativeY, double robotVx, double robotVy, double initialV0, double initialTheta) {
@@ -499,11 +506,18 @@ public class AutoSelect {
     public void setV0Range(double v0Min, double v0Max) {
         this.v0Min = v0Min;
         this.v0Max = v0Max;
+        // 更新Solver的初速度范围
+        solver.setV0Range(v0Min, v0Max);
     }
 
     public void setThetaRange(double thetaMin, double thetaMax) {
         this.thetaMin = thetaMin;
         this.thetaMax = thetaMax;
+        // 更新Solver的仰角范围
+        solver.setYawModeThetaRange(thetaMin, thetaMax);
+        solver.setVelModeThetaRange(thetaMin, thetaMax);
+        // 同时更新ProjectileParameters中的thetaMax
+        this.params.thetaMax = thetaMax;
     }
     
     // 设置高度差（炮口与目标的高度差）
