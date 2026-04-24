@@ -22,8 +22,8 @@ public class CalibrationHelper {
         double bestError = Double.MAX_VALUE;
 
         // 第一阶段：粗略搜索整个参数空间
-        for (double kx = 0; kx <= 0.1; kx += 0.005) { // kx范围：0~0.1
-            for (double ky = 0; ky <= 0.5; ky += 0.025) { // ky范围：0~0.5
+        for (double kx = -0.1; kx <= 0.1; kx += 0.005) { // kx范围：-0.1~0.1
+            for (double ky = -0.5; ky <= 0.5; ky += 0.025) { // ky范围：-0.5~0.5
                 double error = calculateFitError(v0RangeAngleData, kx, ky, params.m);
                 if (error < bestError) {
                     bestError = error;
@@ -37,8 +37,8 @@ public class CalibrationHelper {
         double coarseKx = bestKx;
         double coarseKy = bestKy;
         
-        for (double kx = Math.max(0, coarseKx - 0.01); kx <= Math.min(0.1, coarseKx + 0.01); kx += 0.001) { // 更细的kx步长
-            for (double ky = Math.max(0, coarseKy - 0.05); ky <= Math.min(0.5, coarseKy + 0.05); ky += 0.005) { // 更细的ky步长
+        for (double kx = Math.max(-0.1, coarseKx - 0.01); kx <= Math.min(0.1, coarseKx + 0.01); kx += 0.001) { // 更细的kx步长
+            for (double ky = Math.max(-0.5, coarseKy - 0.05); ky <= Math.min(0.5, coarseKy + 0.05); ky += 0.005) { // 更细的ky步长
                 double error = calculateFitError(v0RangeAngleData, kx, ky, params.m);
                 if (error < bestError) {
                     bestError = error;
