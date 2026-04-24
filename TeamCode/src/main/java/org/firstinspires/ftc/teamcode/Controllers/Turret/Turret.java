@@ -23,20 +23,24 @@ import java.util.List;
 public class Turret {
     // 核心组件
     private Shooter shooter;                   // 发射系统
-    private TurretAimController turretAimController; // 炮台旋转控制器
+    private TurretDegreeController turretDegreeController; // 炮台旋转控制器
     private AprilTagProcessor aprilTag;         // AprilTag处理器
     private VisionPortal visionPortal;          // 视觉门户
     
-    // 仰角控制电机
+    // 电机和伺服
     private DcMotorEx yawMotor;                // 仰角电机
+    private Servo launchServo;                 // 发射机构伺服电机
     
     // 状态变量
     private double roll;                        // 绕z轴角（水平旋转角）
     private double yaw;                         // 绕y轴角（仰角）
     private double k;                           // 速度转换参数k
     private double b;                           // 速度转换参数b
-    private TurretDegreeController turretDegreeController;
-    public double delta_H; 
+    public double delta_H;                      // 炮口与目标的高度差
+    
+    // 发射机构状态
+    private static final double SERVO_REST_POSITION = 0.0;    // 伺服电机休息位置
+    private static final double SERVO_LAUNCH_POSITION = 0.5;  // 伺服电机发射位置 
     
     // 常量
     private static final double YAW_TICKS_PER_DEGREE = 28.0 / 360.0; // 仰角电机每度脉冲数
@@ -50,11 +54,15 @@ public class Turret {
         shooter = new Shooter(hardwareMap, telemetry, "shooterMotor", false);
         
         // 初始化炮台旋转控制器
-        turretAimController = new TurretAimController(hardwareMap, "turretMotor");
+        turretDegreeController = new TurretDegreeController();
         
         // 初始化仰角电机
         yawMotor = hardwareMap.get(DcMotorEx.class, "yawMotor");
         initYawMotor();
+        
+        // 初始化发射机构伺服电机
+        launchServo = hardwareMap.get(Servo.class, "launchServo");
+        launchServo.setPosition(SERVO_REST_POSITION);
         
         // 初始化AprilTag处理器
         initAprilTag(hardwareMap);
@@ -64,6 +72,7 @@ public class Turret {
         yaw = 0.0;
         k = 1.0;
         b = 0.0;
+        delta_H = 0.5; // 默认高度差
     }
     
     // 初始化仰角电机
@@ -94,7 +103,13 @@ public class Turret {
      * @return 是否成功
      */
     public boolean rotate_to(double roll, double yaw){
-        return turretAimController.rotateTo(roll, yaw);
+        boolean success = turretDegreeController.rotateTo(roll, yaw);
+        if (success) {
+            // 旋转成功后更新内部状态
+            this.roll = roll;
+            this.yaw = yaw;
+        }
+        return success;
     }
     
     /**
@@ -102,7 +117,11 @@ public class Turret {
      * @return 包含roll和yaw的数组 [roll, yaw]
      */
     public double[] get_angle() {
-        roll = turretAimController.getTurretAngle();
+        // 使用TurretDegreeController获取当前角度
+        double[] angles = turretDegreeController.get_angle();
+        roll = angles[0];
+        yaw = angles[1];
+        // 从编码器获取仰角，确保仰角值准确
         yaw = getYawAngle();
         return new double[]{roll, yaw};
     }
@@ -125,6 +144,9 @@ public class Turret {
         double targetYaw = 0;
         
         while (!targetFound) {
+            // 先更新当前角度
+            get_angle();
+            
             // 获取AprilTag检测结果
             List<AprilTagDetection> detections = aprilTag.getDetections();
             
@@ -182,7 +204,7 @@ public class Turret {
      */
     public void shoot(double roll, double yaw) {
         // 计算目标相对位置
-        double deltaH = 0.5; // 假设高度差为0.5米，实际值需要根据硬件调整
+        double deltaH = delta_H; // 使用成员变量delta_H
         double cotYaw = 1.0 / Math.tan(Math.toRadians(yaw));
         double targetX = deltaH * cotYaw * Math.cos(Math.toRadians(roll));
         double targetY = deltaH * cotYaw * Math.sin(Math.toRadians(roll));
@@ -205,7 +227,6 @@ public class Turret {
             // 控制发射电机达到目标速度
             boolean ready = false;
             while (!ready) {
-                //todo shoot(speed) 当前只实现了设置速度，需要完成触发发射的代码
                 ready = shooter.shoot(speed);
                 try {
                     Thread.sleep(20);
@@ -213,6 +234,15 @@ public class Turret {
                     Thread.currentThread().interrupt();
                 }
             }
+            
+            // 触发发射机构
+            launchServo.setPosition(SERVO_LAUNCH_POSITION);
+            try {
+                Thread.sleep(300); // 等待发射动作完成
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            launchServo.setPosition(SERVO_REST_POSITION);
         }
     }
     

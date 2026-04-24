@@ -12,7 +12,7 @@ rotate\_to(roll, yaw) 旋转到与小车正前方逆时针夹角为roll，仰角
 
 get\_angle() 输出当前roll和yaw
 
-aim() 用ApriltagProcessor及ApriltagPoseFtc库实现，从webcam获取当前apriltag的角度偏移，若检测到则调用rotate\_to函数修正，否则用rotate\_to水平逆时针旋转90度，反复循环直到角度偏移<0.1度；用get\_angle函数获取当前仰角和旋转角（即目标的仰角和旋转角）输出
+aim() 用ApriltagProcessor及ApriltagPoseFtc库实现，从webcam获取当前apriltag的角度偏移，若检测到则调用rotate\_to函数修正，否则用rotate\_to水平逆时针旋转90度，反复循环直到角度偏移<0.5度；用get\_angle函数获取当前仰角和旋转角（即目标的仰角和旋转角）输出
 
 set(k, b) 设置k和b
 
