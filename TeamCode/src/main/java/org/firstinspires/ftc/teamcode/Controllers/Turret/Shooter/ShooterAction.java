@@ -6,8 +6,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 //双飞轮控制系统
 public class ShooterAction {
     //左右飞轮
-    private final Shooter leftShooter;
-    private final Shooter rightShooter;
+    private final Shooter1 leftShooter;
+    private final Shooter1 rightShooter;
     
     Telemetry telemetry;
     private int targetSpeed=0;
@@ -17,9 +17,9 @@ public class ShooterAction {
         this.telemetry = telemetryrc;
         //初始化左右飞轮
         //TODO 硬件配置（电机名称和反转设置）是确定的，建议写死在controller里，而不是从外部传入
-        leftShooter = new Shooter(hardwareMap, telemetryrc, leftMotorName, leftReverse);
+        leftShooter = new Shooter1(hardwareMap, telemetryrc, leftMotorName, leftReverse);
         //TODO 考虑是用两个独立的PID控制器，还是一个用PID计算，另一个直接复制负的功率（如果电机性能一致，后者可能更稳定）
-        rightShooter = new Shooter(hardwareMap, telemetryrc, rightMotorName, rightReverse);
+        rightShooter = new Shooter1(hardwareMap, telemetryrc, rightMotorName, rightReverse);
     }
     
     /**

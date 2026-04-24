@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.Controllers.MotorExamples;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -16,7 +15,7 @@ import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAController
  * 结合 PIDSVAController 实现高精度速度控制
  */
 @Config
-public class VoltageOutMotor {
+public class VoltageOutMotor_Degree {
     // Dashboard 热调参参数
     /** 比例系数 */
     public static double kP = 0.0;
@@ -48,7 +47,9 @@ public class VoltageOutMotor {
     /** 遥测实例 */
     private final Telemetry telemetry;
     /** 目标速度 */
-    private double targetVelocity = 0;
+    private double targetVelocity = 1500;
+
+    private double targetDegree = 0;
     /** 上次更新时间 */
     private long lastUpdateTime = 0;
 
@@ -65,7 +66,7 @@ public class VoltageOutMotor {
      * @param motorName 电机名称
      * @param telemetry 遥测实例
      */
-    public VoltageOutMotor(HardwareMap hardwareMap, String motorName, Telemetry telemetry, boolean ifReverse) {
+    public VoltageOutMotor_Degree(HardwareMap hardwareMap, String motorName, Telemetry telemetry, boolean ifReverse) {
         // 获取电机实例
         this.motor = hardwareMap.get(DcMotorEx.class, motorName);
 
@@ -110,8 +111,8 @@ public class VoltageOutMotor {
      * 设置目标速度
      * @param velocity 目标速度（单位：ticks per second）
      */
-    public void setTargetVelocity(double velocity) {
-        this.targetVelocity = velocity;
+    public void setTargetDegree(double degree) {
+        this.targetDegree = degree;
     }
 
     /**

@@ -32,9 +32,10 @@ public class RobotPosition {
 
         instance=new RobotPosition();
         instance.hardwareMap = hardwareMap;
-        instance.localizer=instance.drive.localizer;
+
         instance.currentPose = initpose != null ? initpose : new Pose2d(0,0,0);
         instance.drive=new MecanumDrive(hardwareMap,instance.currentPose);
+        instance.localizer=instance.drive.localizer;
         return instance;
     }
 
