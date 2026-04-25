@@ -12,8 +12,8 @@ public class Shootertester extends LinearOpMode {
 
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        // 初始化双飞轮系统，根据实际电机名称和反转设置调整
-        shooter = new Shooter(hardwareMap,telemetry,"shooterL","shooterR");
+        // 初始化飞轮系统，根据实际电机名称和反转设置调整
+        shooter = new Shooter(hardwareMap,telemetry);
         waitForStart();
         while (opModeIsActive()) {
             // 测试不同速度
@@ -29,7 +29,6 @@ public class Shootertester extends LinearOpMode {
                 shooter.setTargetSpeed(0); // 停止
             }
             shooter.update();
-            shooter.setTelemetry();
 
             telemetry.update();
         }

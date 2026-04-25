@@ -51,7 +51,7 @@ public class Turret {
     // 构造函数
     public Turret(HardwareMap hardwareMap, Telemetry telemetry) {
         // 初始化发射系统
-        shooter = new Shooter(hardwareMap, telemetry, "shooterMotor", false);
+        shooter = new Shooter(hardwareMap, telemetry);
         
         // 初始化炮台旋转控制器
         turretDegreeController = new TurretDegreeController();
@@ -214,7 +214,7 @@ public class Turret {
         // 设置高度差（炮口与目标的高度差）
         autoSelect.setDeltaH(deltaH);
         // 从Shooter类获取当前速度，并使用k和b转换为物理速度v0
-        double currentSpeed = shooter.getCurrent_speed();
+        double currentSpeed = shooter.getCurrentVelocity();
         double initialV0 = (k != 0) ? (currentSpeed - b) / k : 8.0; // 使用k和b转换，k为0时使用默认值
         double initialTheta = Math.toRadians(yaw);
         AutoSelect.AutoSelectResult result = autoSelect.Select(targetX, targetY, 0, 0, initialV0, initialTheta);
@@ -227,7 +227,7 @@ public class Turret {
             // 控制发射电机达到目标速度
             boolean ready = false;
             while (!ready) {
-                ready = shooter.shoot(speed);
+                ready = shooter.setTargetSpeed(speed);
                 try {
                     Thread.sleep(20);
                 } catch (InterruptedException e) {
