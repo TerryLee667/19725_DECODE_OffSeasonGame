@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.Controllers.MotorExamples;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -54,7 +53,7 @@ public class VoltageOutMotor {
 
     /** 达到速度的阈值 **/
 
-    public double RSpeed=20;
+    public double SpeedTolerance =20;
 
     public double currentVelocity=0;
     public double currentPower=0;
@@ -136,10 +135,10 @@ public class VoltageOutMotor {
         lastUpdateTime = now;
 
         // 获取当前电机速度
-        double currentVelocity = motor.getVelocity();
+        currentVelocity = motor.getVelocity();
 
         // 计算控制器输出电压
-        double outputVoltage = controller.calculate(targetVelocity, currentVelocity, dt);
+        double outputVoltage = controller.calculate(targetVelocity, currentVelocity, dt, true);
 
         // 将电压转换为功率
         double power = voltageOut.getVoltageOutPower(outputVoltage);
@@ -156,8 +155,8 @@ public class VoltageOutMotor {
         telemetry.addData("Power", power);
     }
 
-    public boolean whetherReachTarget(){
-        return (motor.getVelocity() - targetVelocity) <= RSpeed;
+    public boolean reachedTarget(){
+        return (motor.getVelocity() - targetVelocity) <= SpeedTolerance;
     }
 
     /**

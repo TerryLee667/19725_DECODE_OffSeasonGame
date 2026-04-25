@@ -72,17 +72,6 @@ public class PIDSVAController {
         slots.put(slot, config);
     }
 
-    /**
-     * 快捷方法：简单速度闭环
-     * setpoint 作为前馈速度项，忽略加速度项
-     * @param setpoint 目标速度
-     * @param measurement 当前速度
-     * @param dt 时间间隔（秒）
-     * @return 控制器输出
-     */
-    public double calculate(double setpoint, double measurement, double dt) {
-        return calculate(setpoint, measurement, setpoint, 0.0, dt);
-    }
 
     /**
      * 快捷方法：简单速度闭环 / 简单位置闭环
