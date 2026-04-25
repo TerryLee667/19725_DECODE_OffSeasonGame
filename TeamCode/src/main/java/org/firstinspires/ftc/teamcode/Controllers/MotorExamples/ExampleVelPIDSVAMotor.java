@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  * ExampleVelPIDSVAMotor 类是一个示例 TeleOp，展示如何使用 ExampleVoltageOutMotor 控制电机速度
  */
 @Config
-@TeleOp(name = "Example VoltageOut Motor")
+@TeleOp(name = "Example VoltageOut Motor", group = "Examples")
 public class ExampleVelPIDSVAMotor extends LinearOpMode {
     /** 目标速度 */
     public static double targetVelocity = 1000;
