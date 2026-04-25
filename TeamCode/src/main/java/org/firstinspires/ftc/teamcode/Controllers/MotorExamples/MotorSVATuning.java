@@ -33,6 +33,7 @@ import java.util.Locale;
 public class MotorSVATuning extends LinearOpMode {
     /** 电机实例 */
     private DcMotorEx motor;
+    private DcMotorEx followerMotor;
     /** 文件写入器，用于记录调优数据 */
     private FileWriter fileWriter;
     /** 日志文件名 */
@@ -65,7 +66,7 @@ public class MotorSVATuning extends LinearOpMode {
     }
 
     /** 当前调优状态 */
-    State state = State.kS_ASSESSING;
+    State state = State.kS_kV_FITTING;
     /** 用于拟合kS和kV的数据点 */
     List<Point2D> points_kS_kV = new ArrayList<>();
     /** 用于拟合kA的数据点 */
@@ -105,9 +106,14 @@ public class MotorSVATuning extends LinearOpMode {
 
         // 初始化电机
         motor = hardwareMap.get(DcMotorEx.class, motorName);
+        followerMotor = hardwareMap.get(DcMotorEx.class, "SVA2"); // 假设有第二个电机作为跟随
         motor.setDirection(DcMotorSimple.Direction.FORWARD);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        followerMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        followerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        followerMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // 初始化电压输出控制器
         voltageOut = new VoltageOut(hardwareMap);
@@ -135,6 +141,9 @@ public class MotorSVATuning extends LinearOpMode {
         }
 
         waitForStart();
+
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        followerMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // 调优变量
         double outputVoltage = 0;
@@ -261,6 +270,7 @@ public class MotorSVATuning extends LinearOpMode {
             }
             // 设置电机功率
             motor.setPower(voltageOut.getVoltageOutPower(outputVoltage));
+            followerMotor.setPower(voltageOut.getVoltageOutPower(outputVoltage)); // 同步跟随电机
 
             // 输出遥测数据
             telemetry.addData("State", state);
