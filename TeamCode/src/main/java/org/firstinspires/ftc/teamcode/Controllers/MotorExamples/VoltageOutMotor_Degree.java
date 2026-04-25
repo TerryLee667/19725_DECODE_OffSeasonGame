@@ -14,11 +14,12 @@ import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAController
  * ExampleVoltageOutMotor 类实现了使用电压输出的电机速度控制
  * 结合 PIDSVAController 实现高精度速度控制
  */
+
 @Config
 public class VoltageOutMotor_Degree {
     // Dashboard 热调参参数
     /** 比例系数 */
-    public static double kP = 0.0;
+    public static double kP = 1.0;
     /** 积分系数 */
     public static double kI = 0.0;
     /** 微分系数 */
@@ -46,18 +47,17 @@ public class VoltageOutMotor_Degree {
     private final SlotConfig config;
     /** 遥测实例 */
     private final Telemetry telemetry;
-    /** 目标速度 */
-    private double targetVelocity = 1500;
-
+    /** 目标角度 */
     private double targetDegree = 0;
+    public static double TickPerDegree = 28.0;
     /** 上次更新时间 */
     private long lastUpdateTime = 0;
 
     /** 达到速度的阈值 **/
 
-    public double RSpeed=20;
+    public static double DegreeTolerance = 0.5;
 
-    public double currentVelocity=0;
+    public double currentDegree =0;
     public double currentPower=0;
 
     /**
@@ -95,6 +95,8 @@ public class VoltageOutMotor_Degree {
         this.telemetry = telemetry;
     }
 
+
+    //如果有多个电机需要控制，通过这个函数配置不同的config。上面只是默认的PIDSVA
     public void setconfig(SlotConfig config){
         this.kP=config.kP;
         this.kI=config.kI;
@@ -109,7 +111,7 @@ public class VoltageOutMotor_Degree {
 
     /**
      * 设置目标速度
-     * @param velocity 目标速度（单位：ticks per second）
+     * @param degree 目标角度（单位：度°）
      */
     public void setTargetDegree(double degree) {
         this.targetDegree = degree;
@@ -136,29 +138,25 @@ public class VoltageOutMotor_Degree {
         double dt = lastUpdateTime == 0 ? 0.02 : (now - lastUpdateTime) / 1000.0;
         lastUpdateTime = now;
 
-        // 获取当前电机速度
-        double currentVelocity = motor.getVelocity();
+        // 获取当前电机位置 计算角度
+        currentDegree = motor.getCurrentPosition() / TickPerDegree;
 
         // 计算控制器输出电压
-        double outputVoltage = controller.calculate(targetVelocity, currentVelocity, dt);
+        double outputVoltage = controller.calculate(targetDegree, currentDegree, dt, false);
 
         // 将电压转换为功率
         double power = voltageOut.getVoltageOutPower(outputVoltage);
 
         // 设置电机功率
         motor.setPower(power);
-        
-        // 输出遥测数据
-        this.currentPower=power;
-        this.currentVelocity=motor.getVelocity();
-        telemetry.addData("TargetVelocity", targetVelocity);
-        telemetry.addData("CurrentVelocity", currentVelocity);
+        telemetry.addData("TargetVelocity", targetDegree);
+        telemetry.addData("CurrentVelocity", currentDegree);
         telemetry.addData("OutputVoltage", outputVoltage);
         telemetry.addData("Power", power);
     }
 
-    public boolean whetherReachTarget(){
-        return (motor.getVelocity() - targetVelocity) <= RSpeed;
+    public boolean ReachedTarget(){
+        return Math.abs(motor.getCurrentPosition() - targetDegree) <= DegreeTolerance;
     }
 
     /**
@@ -167,6 +165,6 @@ public class VoltageOutMotor_Degree {
     public void stop() {
         motor.setPower(0);
     }
-    public double getVelocity(){return currentVelocity;}
+    public double getDegree(){return currentDegree;}
     public double getPower(){return  currentPower;}
 }
