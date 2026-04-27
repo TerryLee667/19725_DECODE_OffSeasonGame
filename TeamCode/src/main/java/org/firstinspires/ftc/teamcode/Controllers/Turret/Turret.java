@@ -13,7 +13,6 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import org.firstinspires.ftc.teamcode.Controllers.Turret.Shooter.Shooter;
-import org.firstinspires.ftc.teamcode.Controllers.Turret.turner.TurretAimController;
 import org.firstinspires.ftc.teamcode.utility.RK4.AutoSelect;
 import org.firstinspires.ftc.teamcode.utility.RK4.Solver;
 import org.firstinspires.ftc.teamcode.Controllers.Turret.turner.TurretDegreeController;
@@ -26,9 +25,12 @@ public class Turret {
     private TurretDegreeController turretDegreeController; // 炮台旋转控制器
     private AprilTagProcessor aprilTag;         // AprilTag处理器
     private VisionPortal visionPortal;          // 视觉门户
+    private String team_color;                  // 团队颜色
+    private int blueTagID;                     // 蓝队AprilTag ID
+    private int redTagID;                      // 红队AprilTag ID
+
     
     // 电机和伺服
-    private DcMotorEx yawMotor;                // 仰角电机
     private Servo launchServo;                 // 发射机构伺服电机
     
     // 状态变量
@@ -36,29 +38,22 @@ public class Turret {
     private double yaw;                         // 绕y轴角（仰角）
     private double k;                           // 速度转换参数k
     private double b;                           // 速度转换参数b
-    public double delta_H;                      // 炮口与目标的高度差
+    private double delta_H;                      // 炮口与目标的高度差
     
     // 发射机构状态
     private static final double SERVO_REST_POSITION = 0.0;    // 伺服电机休息位置
     private static final double SERVO_LAUNCH_POSITION = 0.5;  // 伺服电机发射位置 
     
     // 常量
-    private static final double YAW_TICKS_PER_DEGREE = 28.0 / 360.0; // 仰角电机每度脉冲数
-    private static final double YAW_MAX_POWER = 0.6;                // 仰角电机最大功率
-    private static final double YAW_ANGLE_TOLERANCE = 0.5;          // 仰角容差（度）
     private static final double APRILTAG_ANGLE_TOLERANCE = 0.5;      // AprilTag瞄准容差（度）
     
     // 构造函数
-    public Turret(HardwareMap hardwareMap, Telemetry telemetry) {
+    public Turret(HardwareMap hardwareMap, Telemetry telemetry, double k,double b,double delta_H, String teamColor, int blueTagId, int redTagId) {
         // 初始化发射系统
-        shooter = new Shooter(hardwareMap, telemetry);
+        shooter = new Shooter(hardwareMap, telemetry,k,b);
         
         // 初始化炮台旋转控制器
-        turretDegreeController = new TurretDegreeController();
-        
-        // 初始化仰角电机
-        yawMotor = hardwareMap.get(DcMotorEx.class, "yawMotor");
-        initYawMotor();
+        turretDegreeController = new TurretDegreeController(hardwareMap);
         
         // 初始化发射机构伺服电机
         launchServo = hardwareMap.get(Servo.class, "launchServo");
@@ -70,17 +65,28 @@ public class Turret {
         // 初始化参数
         roll = 0.0;
         yaw = 0.0;
-        k = 1.0;
-        b = 0.0;
-        delta_H = 0.5; // 默认高度差
+        this.k = k;
+        this.b = b;
+        this.delta_H = delta_H;
+        this.team_color = teamColor;
+        this.blueTagID = blueTagId;
+        this.redTagID = redTagId;
     }
     
-    // 初始化仰角电机
-    private void initYawMotor() {
-        yawMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        yawMotor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        yawMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        yawMotor.setDirection(DcMotorEx.Direction.FORWARD);
+    /**
+     * 简化构造函数，使用默认的tag ID
+     */
+    public Turret(HardwareMap hardwareMap, Telemetry telemetry, double k,double b,double delta_H) {
+        this(hardwareMap, telemetry, k, b, delta_H, "blue", 1, 2);
+    }
+    
+
+    /**
+     * 获取当前高度差
+     * @return 当前高度差
+     */
+    public double getDeltaH() {
+        return delta_H;
     }
     
     // 初始化AprilTag处理器
@@ -121,70 +127,58 @@ public class Turret {
         double[] angles = turretDegreeController.get_angle();
         roll = angles[0];
         yaw = angles[1];
-        // 从编码器获取仰角，确保仰角值准确
-        yaw = getYawAngle();
         return new double[]{roll, yaw};
     }
     
-    /**
-     * 从编码器获取仰角
-     * @return 仰角（度）
-     */
-    private double getYawAngle() {
-        return yawMotor.getCurrentPosition() / YAW_TICKS_PER_DEGREE;
-    }
+
     
     /**
-     * 使用AprilTag自动瞄准
-     * @return 目标的仰角和旋转角 [roll, yaw]
+     * 使用AprilTag自动瞄准（非阻塞版本）
+     * @return 包含检测状态和角度的数组：[isTargetFound, roll, yaw]
      */
-    public double[] aim() {
-        boolean targetFound = false;
-        double targetRoll = 0;
-        double targetYaw = 0;
+    public Object[] aim() {
+        // 先更新当前角度
+        get_angle();
         
-        while (!targetFound) {
-            // 先更新当前角度
-            get_angle();
-            
-            // 获取AprilTag检测结果
-            List<AprilTagDetection> detections = aprilTag.getDetections();
-            
-            if (!detections.isEmpty()) {
-                // 使用第一个检测到的AprilTag
-                AprilTagDetection detection = detections.get(0);
-                
-                // 获取角度偏移
-                double bearing = detection.ftcPose.bearing; // 水平角度偏移
-                double elevation = detection.ftcPose.elevation; // 垂直角度偏移
-                
-                // 计算目标角度
-                targetRoll = roll + bearing;
-                targetYaw = yaw + elevation;
-                
-                // 旋转到目标角度
-                rotate_to(targetRoll, targetYaw);
-                
-                // 检查角度偏移是否小于阈值
-                if (Math.abs(bearing) < APRILTAG_ANGLE_TOLERANCE && Math.abs(elevation) < APRILTAG_ANGLE_TOLERANCE) {
-                    targetFound = true;
-                }
-            } else {
-                // 未检测到AprilTag，水平逆时针旋转90度
-                targetRoll = roll + 90;
-                rotate_to(targetRoll, yaw);
+        // 获取AprilTag检测结果
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        boolean isTargetFound = false;
+        AprilTagDetection targetDetection = null;
+        
+        // 确定目标tag ID
+        int targetTagId = team_color.equalsIgnoreCase("blue") ? blueTagID : redTagID;
+        
+        // 遍历检测结果，找到目标tag
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == targetTagId) {
+                targetDetection = detection;
+                isTargetFound = true;
+                break;
             }
+        }
+        
+        if (isTargetFound && targetDetection != null) {
+            // 使用找到的目标tag
+            // 获取角度偏移
+            double bearing = targetDetection.ftcPose.bearing; // 水平角度偏移
+            double elevation = targetDetection.ftcPose.elevation; // 垂直角度偏移
             
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            // 计算目标角度
+            double targetRoll = roll + bearing;
+            double targetYaw = yaw + elevation;
+            
+            // 旋转到目标角度
+            rotate_to(targetRoll, targetYaw);
+        } else {
+            // 未检测到目标tag，水平逆时针旋转90度
+            double targetRoll = roll + 90;
+            rotate_to(targetRoll, yaw);
         }
         
         // 获取当前角度
         double[] angles = get_angle();
-        return angles;
+        // 返回包含检测状态和角度的数组
+        return new Object[]{isTargetFound, angles[0], angles[1]};
     }
     
     /**
@@ -195,6 +189,24 @@ public class Turret {
     public void set(double k, double b) {
         this.k = k;
         this.b = b;
+    }
+    
+    /**
+     * 设置团队颜色
+     * @param teamColor 团队颜色，"blue"或"red"
+     */
+    public void setTeamColor(String teamColor) {
+        this.team_color = teamColor;
+    }
+    
+    /**
+     * 设置AprilTag ID
+     * @param blueTagId 蓝队AprilTag ID
+     * @param redTagId 红队AprilTag ID
+     */
+    public void setTagIDs(int blueTagId, int redTagId) {
+        this.blueTagID = blueTagId;
+        this.redTagID = redTagId;
     }
     
     /**
@@ -227,6 +239,8 @@ public class Turret {
             // 控制发射电机达到目标速度
             boolean ready = false;
             while (!ready) {
+                // 更新发射系统，确保电机获得功率
+                shooter.update();
                 ready = shooter.setTargetSpeed(speed);
                 try {
                     Thread.sleep(20);
@@ -251,13 +265,17 @@ public class Turret {
      * @param shouldShoot 是否发射
      */
     public void update(boolean shouldShoot) {
-        // 瞄准目标
-        double[] targetAngles = aim();
-        double targetRoll = targetAngles[0];
-        double targetYaw = targetAngles[1];
+        // 更新发射系统
+        shooter.update();
         
-        // 如果需要发射
-        if (shouldShoot) {
+        // 瞄准目标
+        Object[] aimResult = aim();
+        boolean isTargetFound = (boolean) aimResult[0];
+        double targetRoll = (double) aimResult[1];
+        double targetYaw = (double) aimResult[2];
+        
+        // 如果需要发射且检测到目标
+        if (shouldShoot && isTargetFound) {
             shoot(targetRoll, targetYaw);
         }
     }
