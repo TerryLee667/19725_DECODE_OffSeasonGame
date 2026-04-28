@@ -11,6 +11,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @TeleOp(name = "AprilTag Tester", group = "Test")
 public class ProcessorTest extends LinearOpMode {
@@ -18,11 +19,11 @@ public class ProcessorTest extends LinearOpMode {
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
 
-    // 调节参数（使用double以支持减半步长）
+    // 调节参数（使用 double 方便步长计算，最终转换为整数）
     private double decimation = 2.0;
-    private double exposure = 10;
-    private double gain = 0;          // 0 通常代表自动
-    private double whiteBalance = 4000;
+    private long exposureMs = 10;        // 曝光时间，单位毫秒
+    private double gain = 0;             // 0 通常代表自动，手动时才有意义
+    private double whiteBalanceK = 4000; // 色温，单位开尔文
 
     private ExposureControl exposureControl;
     private GainControl gainControl;
@@ -36,7 +37,9 @@ public class ProcessorTest extends LinearOpMode {
 
         // 2. 初始化 VisionPortal
         visionPortal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName.class, "Webcam 1"))
+                .setCamera(hardwareMap.get(
+                    org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName.class,
+                    "Webcam 1"))
                 .addProcessor(aprilTag)
                 .build();
 
@@ -51,15 +54,17 @@ public class ProcessorTest extends LinearOpMode {
         gainControl = visionPortal.getCameraControl(GainControl.class);
         whiteBalanceControl = visionPortal.getCameraControl(WhiteBalanceControl.class);
 
-        // 5. 读取当前相机参数作为初始值（如果有）
+        // 5. 设置为手动模式，并读取当前真实值（若支持）
         if (exposureControl != null) {
-            exposure = exposureControl.getExposure();
+            exposureControl.setMode(ExposureControl.Mode.Manual);
+            exposureMs = exposureControl.getExposure(TimeUnit.MILLISECONDS);
         }
         if (gainControl != null) {
             gain = gainControl.getGain();
         }
         if (whiteBalanceControl != null) {
-            whiteBalance = whiteBalanceControl.getWhiteBalance();
+            whiteBalanceControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+            whiteBalanceK = whiteBalanceControl.getWhiteBalanceTemperature();
         }
 
         telemetry.addLine("Ready! Press START");
@@ -68,35 +73,35 @@ public class ProcessorTest extends LinearOpMode {
 
         while (opModeIsActive()) {
             // ---- 手柄调节逻辑 ----
-            // 右扳机（至少一个按住）则步长减半
             boolean fineAdjust = (gamepad1.right_trigger > 0.5) || (gamepad2.right_trigger > 0.5);
             double factor = fineAdjust ? 0.5 : 1.0;
 
-            // 手柄1 上下键调节 Decimation（步长0.1，减半后0.05）
+            // 手柄1 上下：调节 Decimation（步长0.1，减半后0.05）
             if (gamepad1.dpad_up) {
                 decimation += 0.1 * factor;
             } else if (gamepad1.dpad_down) {
                 decimation -= 0.1 * factor;
             }
-            decimation = Math.max(1.0, Math.min(8.0, decimation)); // 限制范围
+            decimation = Math.max(1.0, Math.min(8.0, decimation));
 
-            // 手柄1 左右键调节 White Balance（步长100，减半后50）
+            // 手柄1 左右：调节 White Balance（步长100 K，减半后50 K）
             if (gamepad1.dpad_right) {
-                whiteBalance += 100.0 * factor;
+                whiteBalanceK += 100.0 * factor;
             } else if (gamepad1.dpad_left) {
-                whiteBalance -= 100.0 * factor;
+                whiteBalanceK -= 100.0 * factor;
             }
-            whiteBalance = Math.max(2000, Math.min(6500, whiteBalance));
+            // 限制在典型范围内（具体边界可从硬件查询，这里使用常见值）
+            whiteBalanceK = Math.max(2000, Math.min(6500, whiteBalanceK));
 
-            // 手柄2 上下键调节 Exposure（步长5 ms，减半后2.5 ms）
+            // 手柄2 上下：调节 Exposure（步长5 ms，减半后2.5 ms）
             if (gamepad2.dpad_up) {
-                exposure += 5.0 * factor;
+                exposureMs += 5 * factor;
             } else if (gamepad2.dpad_down) {
-                exposure -= 5.0 * factor;
+                exposureMs -= 5 * factor;
             }
-            exposure = Math.max(0, Math.min(204, exposure));
+            exposureMs = Math.max(0, Math.min(204, exposureMs)); // 0 ms 表示自动？
 
-            // 手柄2 左右键调节 Gain（步长5，减半后2.5）
+            // 手柄2 左右：调节 Gain（步长5，减半后2.5）
             if (gamepad2.dpad_right) {
                 gain += 5.0 * factor;
             } else if (gamepad2.dpad_left) {
@@ -107,15 +112,15 @@ public class ProcessorTest extends LinearOpMode {
             // ---- 将参数应用到硬件 ----
             aprilTag.setDecimation((float) decimation);
 
-            // 设置相机参数（需要转换为整数）
+            // 曝光与增益：必须在 Manual 模式下设置
             if (exposureControl != null) {
-                exposureControl.setExposure((int) exposure);
-            }
-            if (whiteBalanceControl != null) {
-                whiteBalanceControl.setWhiteBalance((int) whiteBalance);
+                exposureControl.setExposure(exposureMs, TimeUnit.MILLISECONDS);
             }
             if (gainControl != null) {
                 gainControl.setGain((int) gain);
+            }
+            if (whiteBalanceControl != null) {
+                whiteBalanceControl.setWhiteBalanceTemperature((int) whiteBalanceK);
             }
 
             // ---- 获取检测结果并显示 ----
@@ -123,9 +128,9 @@ public class ProcessorTest extends LinearOpMode {
 
             telemetry.addLine("==== Parameters ====");
             telemetry.addData("Decimation", "%.2f", decimation);
-            telemetry.addData("Exposure (ms)", "%.1f (%d)", exposure, (int) exposure);
-            telemetry.addData("Gain", "%.1f (%d)", gain, (int) gain);
-            telemetry.addData("White Balance (K)", "%.1f (%d)", whiteBalance, (int) whiteBalance);
+            telemetry.addData("Exposure (ms)", "%d", exposureMs);
+            telemetry.addData("Gain", "%.0f", gain);
+            telemetry.addData("White Balance (K)", "%.0f", whiteBalanceK);
             telemetry.addData("Fine adjust", fineAdjust);
 
             telemetry.addLine("\n==== Detections ====");
@@ -149,7 +154,6 @@ public class ProcessorTest extends LinearOpMode {
             telemetry.update();
         }
 
-        // 关闭 VisionPortal
         visionPortal.close();
     }
 }
