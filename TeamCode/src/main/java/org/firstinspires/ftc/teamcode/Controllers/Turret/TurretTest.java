@@ -12,14 +12,12 @@ public class TurretTest extends LinearOpMode {
     @Override
     public void runOpMode() {
         // 初始化 Turret
-        turret = new Turret(hardwareMap, telemetry);
+        turret = new Turret(hardwareMap, telemetry,1.0,0.0,0,"blue",20,24);
         
-        // 设置参数
-        turret.delta_H = 0.5; // 设置高度差
         turret.set(100, 50); // 设置速度转换参数 k 和 b
         
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("Delta H", turret.delta_H);
+        telemetry.addData("Delta H", turret.getDeltaH());
         telemetry.addData("k", 100);
         telemetry.addData("b", 50);
         telemetry.update();
@@ -34,9 +32,10 @@ public class TurretTest extends LinearOpMode {
             turret.update(shouldShoot);
             
             // 获取当前角度
-            double[] angles = turret.get_angle();
-            double currentRoll = angles[0];
-            double currentYaw = angles[1];
+            Object[] aimResult = turret.aim();
+            boolean isTargetFound = (boolean) aimResult[0];
+            double currentRoll = (double) aimResult[1];
+            double currentYaw = (double) aimResult[2];
             
             // 显示信息
             telemetry.addData("Status", "Running");
