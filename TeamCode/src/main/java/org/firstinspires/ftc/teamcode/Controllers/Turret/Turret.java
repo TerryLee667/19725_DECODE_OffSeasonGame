@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.OpModes.OffseasonDECODE;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -28,6 +29,7 @@ public class Turret {
     private String team_color;                  // 团队颜色
     private int blueTagID;                     // 蓝队AprilTag ID
     private int redTagID;                      // 红队AprilTag ID
+
 
     
     // 电机和伺服
@@ -50,7 +52,7 @@ public class Turret {
     // 构造函数
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, double k,double b,double delta_H, String teamColor, int blueTagId, int redTagId) {
         // 初始化发射系统
-        shooter = new Shooter(hardwareMap, telemetry,k,b);
+        shooter = new Shooter(hardwareMap, telemetry);
         
         // 初始化炮台旋转控制器
         turretDegreeController = new TurretDegreeController(hardwareMap);
@@ -136,7 +138,7 @@ public class Turret {
      * 使用AprilTag自动瞄准（非阻塞版本）
      * @return 包含检测状态和角度的数组：[isTargetFound, roll, yaw]
      */
-    public Object[] aim() {
+    public Object[] aim(int targetTagId) {
         // 先更新当前角度
         get_angle();
         
@@ -144,9 +146,9 @@ public class Turret {
         List<AprilTagDetection> detections = aprilTag.getDetections();
         boolean isTargetFound = false;
         AprilTagDetection targetDetection = null;
-        
+
         // 确定目标tag ID
-        int targetTagId = team_color.equalsIgnoreCase("blue") ? blueTagID : redTagID;
+//        int targetTagId = team_color.equalsIgnoreCase("blue") ? blueTagID : redTagID;
         
         // 遍历检测结果，找到目标tag
         for (AprilTagDetection detection : detections) {
@@ -264,12 +266,12 @@ public class Turret {
      * 每帧调用的更新函数
      * @param shouldShoot 是否发射
      */
-    public void update(boolean shouldShoot) {
+    public void update(boolean shouldShoot,int targetTagId) {
         // 更新发射系统
         shooter.update();
         
         // 瞄准目标
-        Object[] aimResult = aim();
+        Object[] aimResult = aim(targetTagId);
         boolean isTargetFound = (boolean) aimResult[0];
         double targetRoll = (double) aimResult[1];
         double targetYaw = (double) aimResult[2];
