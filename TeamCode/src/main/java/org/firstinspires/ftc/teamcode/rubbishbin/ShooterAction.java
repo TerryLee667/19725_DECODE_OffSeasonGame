@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Turret.Shooter;
+package org.firstinspires.ftc.teamcode.rubbishbin;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;

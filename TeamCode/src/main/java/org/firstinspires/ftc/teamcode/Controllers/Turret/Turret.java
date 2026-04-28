@@ -21,7 +21,8 @@ import java.util.List;
 
 public class Turret {
     // 核心组件
-    private Shooter shooter;                   // 发射系统
+    public Shooter shooter;                   // 发射系统
+    Telemetry telemetry;
     private TurretDegreeController turretDegreeController; // 炮台旋转控制器
     private AprilTagProcessor aprilTag;         // AprilTag处理器
     private VisionPortal visionPortal;          // 视觉门户
@@ -30,9 +31,7 @@ public class Turret {
     private int redTagID;                      // 红队AprilTag ID
 
     
-    // 电机和伺服
-    private Servo launchServo;                 // 发射机构伺服电机
-    
+
     // 状态变量
     private double roll;                        // 绕z轴角（水平旋转角）
     private double yaw;                         // 绕y轴角（仰角）
@@ -50,19 +49,14 @@ public class Turret {
     // 构造函数
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, double k,double b,double delta_H, String teamColor, int blueTagId, int redTagId) {
         // 初始化发射系统
-        shooter = new Shooter(hardwareMap, telemetry,k,b);
+        shooter = new Shooter(hardwareMap, telemetry);
+        this.telemetry=telemetry;
         
         // 初始化炮台旋转控制器
-        turretDegreeController = new TurretDegreeController(hardwareMap);
+        turretDegreeController = new TurretDegreeController(hardwareMap,telemetry);
         
-        // 初始化发射机构伺服电机
-        launchServo = hardwareMap.get(Servo.class, "launchServo");
-        launchServo.setPosition(SERVO_REST_POSITION);
-        
-        // 初始化AprilTag处理器
         initAprilTag(hardwareMap);
-        
-        // 初始化参数
+
         roll = 0.0;
         yaw = 0.0;
         this.k = k;
@@ -117,38 +111,23 @@ public class Turret {
         }
         return success;
     }
-    
-    /**
-     * 获取当前角度
-     * @return 包含roll和yaw的数组 [roll, yaw]
-     */
+
     public double[] get_angle() {
-        // 使用TurretDegreeController获取当前角度
         double[] angles = turretDegreeController.get_angle();
         roll = angles[0];
         yaw = angles[1];
         return new double[]{roll, yaw};
     }
-    
 
-    
-    /**
-     * 使用AprilTag自动瞄准（非阻塞版本）
-     * @return 包含检测状态和角度的数组：[isTargetFound, roll, yaw]
-     */
     public Object[] aim() {
-        // 先更新当前角度
         get_angle();
-        
-        // 获取AprilTag检测结果
+
         List<AprilTagDetection> detections = aprilTag.getDetections();
         boolean isTargetFound = false;
         AprilTagDetection targetDetection = null;
-        
-        // 确定目标tag ID
+
         int targetTagId = team_color.equalsIgnoreCase("blue") ? blueTagID : redTagID;
-        
-        // 遍历检测结果，找到目标tag
+
         for (AprilTagDetection detection : detections) {
             if (detection.id == targetTagId) {
                 targetDetection = detection;
@@ -156,133 +135,84 @@ public class Turret {
                 break;
             }
         }
-        
+
+        double targetRoll;
+        double targetYaw;
+
         if (isTargetFound && targetDetection != null) {
-            // 使用找到的目标tag
-            // 获取角度偏移
-            double bearing = targetDetection.ftcPose.bearing; // 水平角度偏移
-            double elevation = targetDetection.ftcPose.elevation; // 垂直角度偏移
-            
-            // 计算目标角度
-            double targetRoll = roll + bearing;
-            double targetYaw = yaw + elevation;
-            
-            // 旋转到目标角度
-            rotate_to(targetRoll, targetYaw);
+            double bearing = targetDetection.ftcPose.bearing;
+            double elevation = targetDetection.ftcPose.elevation;
+
+            targetRoll = this.roll + bearing;
+            targetYaw = this.yaw + elevation;
         } else {
-            // 未检测到目标tag，水平逆时针旋转90度
-            double targetRoll = roll + 90;
-            rotate_to(targetRoll, yaw);
+            targetRoll = this.roll + 90;
+            targetYaw = this.yaw;
         }
-        
-        // 获取当前角度
+
+        rotate_to(targetRoll, targetYaw);
+
         double[] angles = get_angle();
-        // 返回包含检测状态和角度的数组
         return new Object[]{isTargetFound, angles[0], angles[1]};
     }
-    
-    /**
-     * 设置速度转换参数
-     * @param k 比例系数
-     * @param b 截距
-     */
+
     public void set(double k, double b) {
         this.k = k;
         this.b = b;
     }
-    
-    /**
-     * 设置团队颜色
-     * @param teamColor 团队颜色，"blue"或"red"
-     */
+
     public void setTeamColor(String teamColor) {
         this.team_color = teamColor;
     }
-    
-    /**
-     * 设置AprilTag ID
-     * @param blueTagId 蓝队AprilTag ID
-     * @param redTagId 红队AprilTag ID
-     */
+
     public void setTagIDs(int blueTagId, int redTagId) {
         this.blueTagID = blueTagId;
         this.redTagID = redTagId;
     }
-    
-    /**
-     * 发射小球
-     * @param roll 目标旋转角
-     * @param yaw 目标仰角
-     */
+
     public void shoot(double roll, double yaw) {
-        // 计算目标相对位置
-        double deltaH = delta_H; // 使用成员变量delta_H
+        double deltaH = delta_H;
         double cotYaw = 1.0 / Math.tan(Math.toRadians(yaw));
         double targetX = deltaH * cotYaw * Math.cos(Math.toRadians(roll));
         double targetY = deltaH * cotYaw * Math.sin(Math.toRadians(roll));
-        
-        // 使用RK4计算发射参数
+
         AutoSelect autoSelect = new AutoSelect();
-        // 设置高度差（炮口与目标的高度差）
         autoSelect.setDeltaH(deltaH);
-        // 从Shooter类获取当前速度，并使用k和b转换为物理速度v0
+
         double currentSpeed = shooter.getCurrentVelocity();
-        double initialV0 = (k != 0) ? (currentSpeed - b) / k : 8.0; // 使用k和b转换，k为0时使用默认值
+        double initialV0 = (k != 0) ? (currentSpeed - b) / k : 8.0;
         double initialTheta = Math.toRadians(yaw);
         AutoSelect.AutoSelectResult result = autoSelect.Select(targetX, targetY, 0, 0, initialV0, initialTheta);
-        
+
         if (result.success) {
-            // 将v0转换为转速
             double v0 = result.v0;
             int speed = (int) (k * v0 + b);
-            
-            // 控制发射电机达到目标速度
-            boolean ready = false;
-            while (!ready) {
-                // 更新发射系统，确保电机获得功率
-                shooter.update();
-                ready = shooter.setTargetSpeed(speed);
-                try {
-                    Thread.sleep(20);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-            
-            // 触发发射机构
-            launchServo.setPosition(SERVO_LAUNCH_POSITION);
-            try {
-                Thread.sleep(300); // 等待发射动作完成
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            launchServo.setPosition(SERVO_REST_POSITION);
+            shooter.setTargetSpeed(speed);
         }
     }
-    
-    /**
-     * 每帧调用的更新函数
-     * @param shouldShoot 是否发射
-     */
-    public void update(boolean shouldShoot) {
-        // 更新发射系统
+
+    public void update(boolean shouldAim, boolean shouldShoot) {
         shooter.update();
-        
-        // 瞄准目标
-        Object[] aimResult = aim();
-        boolean isTargetFound = (boolean) aimResult[0];
-        double targetRoll = (double) aimResult[1];
-        double targetYaw = (double) aimResult[2];
-        
-        // 如果需要发射且检测到目标
-        if (shouldShoot && isTargetFound) {
-            shoot(targetRoll, targetYaw);
+
+        if (shouldAim) {
+            Object[] aimResult = aim();
+            boolean isTargetFound = (boolean) aimResult[0];
+            double targetRoll = (double) aimResult[1];
+            double targetYaw = (double) aimResult[2];
+
+            if (shouldShoot && isTargetFound) {
+                shoot(targetRoll, targetYaw);
+            }
+        } else if (shouldShoot) {
+            shoot(roll, yaw);
         }
     }
-    
-    /**
-     * 关闭视觉门户
-     */
+
+
+    public void stop() {
+        turretDegreeController.stop();
+    }
+
     public void close() {
         if (visionPortal != null) {
             visionPortal.close();

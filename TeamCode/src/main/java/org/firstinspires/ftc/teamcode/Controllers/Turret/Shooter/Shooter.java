@@ -33,8 +33,8 @@ public class Shooter {
 
     public static double VelocityTolerance = 20;
     /** 电机实例 */
-    private final DcMotorEx motorL;
-    private final DcMotorEx motorR;
+    private final DcMotorEx shooterL;
+    private final DcMotorEx shooterR;
     /** 电压输出控制器 */
     private final VoltageOut voltageOut;
     /** PIDSVAController 实例 */
@@ -53,22 +53,22 @@ public class Shooter {
     private double power=0;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetryrc){
-        this.motorL = hardwareMap.get(DcMotorEx.class, "motorL");
-        this.motorR = hardwareMap.get(DcMotorEx.class, "motorR");
+        this.shooterL = hardwareMap.get(DcMotorEx.class, "motorL");
+        this.shooterR = hardwareMap.get(DcMotorEx.class, "motorR");
 
 
         // 配置电机
-        this.motorL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        this.motorL.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        this.motorL.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        this.shooterL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        this.shooterL.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        this.shooterL.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
-        this.motorR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        this.motorR.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        this.motorR.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        this.shooterR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        this.shooterR.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        this.shooterR.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
-        this.motorL.setDirection(DcMotorEx.Direction.REVERSE);
+        this.shooterL.setDirection(DcMotorEx.Direction.REVERSE);
 
-        this.motorR.setDirection(DcMotorEx.Direction.FORWARD);
+        this.shooterR.setDirection(DcMotorEx.Direction.FORWARD);
 
         // 初始化电压输出控制器
         this.voltageOut = new VoltageOut(hardwareMap);
@@ -95,12 +95,9 @@ public class Shooter {
     public void update(){
         if(targetVelocity == 0){
             //绕过计算直接停电机。更加保险
-            motorL.setPower(0);
-            motorR.setPower(0);
-            telemetry.addData("TargetVelocity", targetVelocity);
-            telemetry.addData("CurrentVelocity", currentVelocity);
-            telemetry.addData("OutputVoltage", 0);
-            telemetry.addData("Power", 0);
+            shooterL.setPower(0);
+            shooterR.setPower(0);
+
             return;
         }
         //两套PID是不对的，当时是因为没有速度前馈项，所以强行用了两套PID参数，一套针对低速，一套针对高速。
@@ -113,17 +110,28 @@ public class Shooter {
         long now = System.currentTimeMillis();
         double dt = lastUpdateTime == 0 ? 0.02 : (now - lastUpdateTime) / 1000.0;
         lastUpdateTime = now;
-        currentVelocity = motorL.getVelocity();
+        currentVelocity = shooterL.getVelocity();
         outputVoltage = controller.calculate(targetVelocity, currentVelocity, dt, true);
         power = voltageOut.getVoltageOutPower(outputVoltage);
 
-        motorL.setPower(power);
-        motorR.setPower(power);
+        shooterL.setPower(power);
+        shooterR.setPower(power);
 
         telemetry.addData("TargetVelocity", targetVelocity);
         telemetry.addData("CurrentVelocity", currentVelocity);
         telemetry.addData("OutputVoltage", outputVoltage);
         telemetry.addData("Power", power);
+    }
+    public double getPowerL(){return shooterL.getPower();}
+    public double getPowerR(){return shooterR.getPower();}
+    public double getSpeedL(){return shooterL.getVelocity();}
+    public double getSpeedR(){return shooterR.getVelocity();}
+    public void setTelemetry(){
+        telemetry.addData("Shooter PowerL", getPowerL());
+        telemetry.addData("Shooter PowerR", getPowerR());
+        telemetry.addData("Shooter Target Speed", this.targetVelocity);
+        telemetry.addData("Shooter VelocityL", getSpeedL());
+        telemetry.addData("Shooter VelocityR", getSpeedR());
     }
     public double getCurrentVelocity(){
         return currentVelocity;

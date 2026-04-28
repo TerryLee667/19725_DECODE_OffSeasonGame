@@ -4,11 +4,9 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.Controllers.Turret.Shooter.ShooterAction;
-import org.firstinspires.ftc.teamcode.Controllers.Turret.turner.TurretAimController;
-import org.firstinspires.ftc.teamcode.Controllers.Turret.turner.TurretBoardController;
+import org.firstinspires.ftc.teamcode.rubbishbin.ShooterAction;
+import org.firstinspires.ftc.teamcode.rubbishbin.TurretBoardController;
 
 @TeleOp(name = "GearTester", group = "Tests")
 public class GearTester extends LinearOpMode {

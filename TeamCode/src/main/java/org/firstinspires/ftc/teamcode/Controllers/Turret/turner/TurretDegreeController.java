@@ -2,202 +2,251 @@ package org.firstinspires.ftc.teamcode.Controllers.Turret.turner;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers.PIDSVAController;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.PIDSVAControllers.SlotConfig;
+import org.firstinspires.ftc.teamcode.Controllers.MotorExamples.VoltageOut;
+
+/**
+ * TurretDegreeController 类实现炮台旋转控制
+ * 支持 roll(水平旋转) 电机使用 PIDSVA 位置闭环控制
+ * 支持 yaw(仰角) 舵机使用位置直接控制
+ */
 public class TurretDegreeController {
-    // 电机实例
-    private DcMotorEx rollMotor;    // 水平旋转电机
-    private DcMotorEx yawMotor;     // 仰角电机
-    
-    // 电机参数
-    public static double ROLL_MOTOR_TICKS_PER_REV = 28;   // 水平旋转电机每转脉冲数
-    public static double YAW_MOTOR_TICKS_PER_REV = 28;    // 仰角电机每转脉冲数
-    public static double ROLL_TICKS_PER_DEGREE = ROLL_MOTOR_TICKS_PER_REV / 360.0; // 水平旋转每度脉冲数
-    public static double YAW_TICKS_PER_DEGREE = YAW_MOTOR_TICKS_PER_REV / 360.0;  // 仰角每度脉冲数
-    public static double ROLL_MAX_POWER = 0.8;            // 水平旋转电机最大功率
-    public static double YAW_MAX_POWER = 0.6;             // 仰角电机最大功率
-    public static double ANGLE_TOLERANCE = 0.5;           // 角度容差（度）
-    
-    // 状态变量
-    private double currentRoll = 0.0;   // 当前水平旋转角（度，逆时针为正）
-    private double currentYaw = 0.0;    // 当前仰角（度）
-    private double targetRoll = 0.0;    // 目标水平旋转角
-    private double targetYaw = 0.0;     // 目标仰角
-    
+
+    private DcMotorEx rollMotor;
+    private Servo yawServo;
+    private VoltageOut voltageOut;
+    private PIDSVAController controller;
+    private SlotConfig config;
+    private Telemetry telemetry;
+
+    public static double ROLL_MOTOR_TICKS_PER_REV = 28.0;
+    public static double ROLL_TICKS_PER_DEGREE = ROLL_MOTOR_TICKS_PER_REV / 360.0;
+    public static double ANGLE_TOLERANCE = 0.5;
+
+    private double currentRoll = 0.0;
+    private double currentYaw = 0.0;
+    private double targetRoll = 0.0;
+    private double targetYaw = 0.0;
+    private long lastUpdateTime = 0;
+
+    public static double kP = 1.0;
+    public static double kI = 0.0;
+    public static double kD = 0.0;
+    public static double maxI = 1.0;
+    public static double kS = 0.0;
+    public static double kV = 0.0;
+    public static double kA = 0.0;
+    public static double outputMin = -14.0;
+    public static double outputMax = 14.0;
+
+    public static double YAW_SERVO_MIN = 0.0;
+    public static double YAW_SERVO_MAX = 1.0;
+    public static double YAW_ANGLE_MIN = 0.0;
+    public static double YAW_ANGLE_MAX = 180.0;
+
     /**
      * 构造函数
      * @param hardwareMap 硬件映射
      * @param rollMotorName 水平旋转电机名称
-     * @param yawMotorName 仰角电机名称
+     * @param yawServoName 仰角舵机名称
+     * @param telemetry 遥测实例
      */
-    public TurretDegreeController(HardwareMap hardwareMap, String rollMotorName, String yawMotorName) {
-        // 初始化水平旋转电机
-        rollMotor = hardwareMap.get(DcMotorEx.class, rollMotorName);
+    public TurretDegreeController(HardwareMap hardwareMap, String rollMotorName, String yawServoName, Telemetry telemetry) {
+        this.rollMotor = hardwareMap.get(DcMotorEx.class, rollMotorName);
+        this.yawServo = hardwareMap.get(Servo.class, yawServoName);
+        this.telemetry = telemetry;
+
         initRollMotor();
-        
-        // 初始化仰角电机
-        yawMotor = hardwareMap.get(DcMotorEx.class, yawMotorName);
-        initYawMotor();
-        
-        // 初始化角度
+
+        this.voltageOut = new VoltageOut(hardwareMap);
+
+        this.config = new SlotConfig()
+                .withKP(kP).withKI(kI).withKD(kD).withMaxI(maxI)
+                .withKS(kS).withKV(kV).withKA(kA)
+                .withOutputLimits(outputMin, outputMax);
+        this.controller = new PIDSVAController().withSlot0(config);
+
         resetAngles();
     }
-    
+
     /**
      * 默认构造函数，使用默认电机名称
      * @param hardwareMap 硬件映射
      */
-    public TurretDegreeController(HardwareMap hardwareMap) {
-        this(hardwareMap, "rollMotor", "yawMotor");
+    public TurretDegreeController(HardwareMap hardwareMap,Telemetry telemetry1) {
+        this(hardwareMap, "rollMotor", "yawServo",telemetry1);
     }
-    
+
     /**
      * 初始化水平旋转电机
      */
     private void initRollMotor() {
         rollMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        rollMotor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        rollMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        rollMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        rollMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         rollMotor.setDirection(DcMotorEx.Direction.FORWARD);
     }
-    
+
     /**
-     * 初始化仰角电机
-     */
-    private void initYawMotor() {
-        yawMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        yawMotor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        yawMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        yawMotor.setDirection(DcMotorEx.Direction.FORWARD);
-    }
-    
-    /**
-     * 重置角度基准
+     * 重置角度基准，将当前位置设为零点
      */
     public void resetAngles() {
         rollMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        yawMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         currentRoll = 0.0;
         currentYaw = 0.0;
         targetRoll = 0.0;
         targetYaw = 0.0;
+        yawServo.setPosition(YAW_SERVO_MIN);
     }
-    
+
     /**
-     * 旋转到指定角度
-     * @param roll 水平旋转角（度，逆时针为正）
-     * @param yaw 仰角（度）
-     * @return 是否成功
+     * 设置目标水平旋转角度
+     * @param roll 目标角度(度)
+     */
+    public void setTargetRoll(double roll) {
+        this.targetRoll = normalizeAngle(roll);
+    }
+
+    /**
+     * 设置目标仰角角度
+     * @param yaw 目标角度(度)，范围[YAW_ANGLE_MIN, YAW_ANGLE_MAX]
+     */
+    public void setTargetYaw(double yaw) {
+        this.targetYaw = Math.max(YAW_ANGLE_MIN, Math.min(YAW_ANGLE_MAX, yaw));
+    }
+
+    /**
+     * 同时设置目标和仰角目标
+     * @param roll 目标水平角度(度)
+     * @param yaw 目标仰角(度)
+     */
+    public void setTarget(double roll, double yaw) {
+        setTargetRoll(roll);
+        setTargetYaw(yaw);
+    }
+
+    /**
+     * 旋转到指定角度(需在主循环中持续调用)
+     * @param roll 目标水平旋转角(度)
+     * @param yaw 目标仰角(度)
+     * @return 是否已到达目标位置
      */
     public boolean rotateTo(double roll, double yaw) {
-        // 更新目标角度
         targetRoll = normalizeAngle(roll);
         targetYaw = yaw;
-        
-        // 控制水平旋转
+
         boolean rollReached = rotateRollTo(targetRoll);
-        
-        // 控制仰角
         boolean yawReached = rotateYawTo(targetYaw);
-        
-        // 更新当前角度
-        updateCurrentAngles();
-        
-        // 返回是否两个角度都已达到目标
+
         return rollReached && yawReached;
     }
-    
+
     /**
-     * 旋转水平电机到目标角度
-     * @param targetAngle 目标水平角度
+     * 旋转水平电机到目标角度 - PIDSVA位置闭环控制
+     * @param targetAngle 目标水平角度(度)
      * @return 是否达到目标
      */
     private boolean rotateRollTo(double targetAngle) {
-        // 计算目标编码器位置
-        int targetTicks = (int) (targetAngle * ROLL_TICKS_PER_DEGREE);
-        // 计算当前编码器位置
-        int currentTicks = rollMotor.getCurrentPosition();
-        // 计算角度误差
-        double angleError = Math.abs(targetAngle - getRollAngle());
-        
-        // 误差小于容差时停止电机，否则以可控功率驱动
-        if (angleError < ANGLE_TOLERANCE) {
-            rollMotor.setPower(0.0);
-            return true;
-        } else {
-            // 简单比例控制（P控制）
-            double power = Math.min(ROLL_MAX_POWER, Math.max(-ROLL_MAX_POWER, angleError / 90.0 * ROLL_MAX_POWER));
-            // 调整功率方向
-            power = (targetTicks > currentTicks) ? power : -power;
-            rollMotor.setPower(power);
-            return false;
-        }
+        setTargetRoll(targetAngle);
+        currentRoll = rollMotor.getCurrentPosition() / ROLL_TICKS_PER_DEGREE;
+        currentRoll = normalizeAngle(currentRoll);
+        return Math.abs(currentRoll - targetAngle) <= ANGLE_TOLERANCE;
     }
-    
+
     /**
-     * 旋转仰角电机到目标角度
-     * @param targetAngle 目标仰角
+     * 旋转仰角舵机到目标角度 - 舵机位置直接控制
+     * @param targetAngle 目标仰角(度)
      * @return 是否达到目标
      */
     private boolean rotateYawTo(double targetAngle) {
-        // 计算目标编码器位置
-        int targetTicks = (int) (targetAngle * YAW_TICKS_PER_DEGREE);
-        // 计算当前编码器位置
-        int currentTicks = yawMotor.getCurrentPosition();
-        // 计算角度误差
-        double angleError = Math.abs(targetAngle - getYawAngle());
-        
-        // 误差小于容差时停止电机，否则以可控功率驱动
-        if (angleError < ANGLE_TOLERANCE) {
-            yawMotor.setPower(0.0);
-            return true;
-        } else {
-            // 简单比例控制（P控制）
-            double power = Math.min(YAW_MAX_POWER, Math.max(-YAW_MAX_POWER, angleError / 45.0 * YAW_MAX_POWER));
-            // 调整功率方向
-            power = (targetTicks > currentTicks) ? power : -power;
-            yawMotor.setPower(power);
-            return false;
+        setTargetYaw(targetAngle);
+        currentYaw = yawServo.getPosition() * (YAW_ANGLE_MAX - YAW_ANGLE_MIN) + YAW_ANGLE_MIN;
+
+        return Math.abs(currentYaw - targetAngle) <= ANGLE_TOLERANCE;
+    }
+
+    /**
+     * 每帧调用的总更新函数
+     * 包含所有控制逻辑和遥测更新
+     */
+    public void update() {
+        config.withKP(kP).withKI(kI).withKD(kD).withMaxI(maxI)
+              .withKS(kS).withKV(kV).withKA(kA)
+              .withOutputLimits(outputMin, outputMax);
+        controller.resetSlot(config);
+
+        long now = System.currentTimeMillis();
+        double dt = lastUpdateTime == 0 ? 0.02 : (now - lastUpdateTime) / 1000.0;
+        lastUpdateTime = now;
+
+        currentRoll = rollMotor.getCurrentPosition() / ROLL_TICKS_PER_DEGREE;
+        double outputVoltage = controller.calculate(targetRoll, currentRoll, dt, false);
+        double power = voltageOut.getVoltageOutPower(outputVoltage);
+        rollMotor.setPower(power);
+
+        double yawTargetServo = (targetYaw - YAW_ANGLE_MIN) / (YAW_ANGLE_MAX - YAW_ANGLE_MIN);
+        yawServo.setPosition(Math.max(YAW_SERVO_MIN, Math.min(YAW_SERVO_MAX, yawTargetServo)));
+        currentYaw = yawServo.getPosition() * (YAW_ANGLE_MAX - YAW_ANGLE_MIN) + YAW_ANGLE_MIN;
+
+        if (telemetry != null) {
+            telemetry.addData("TargetRoll", targetRoll);
+            telemetry.addData("CurrentRoll", currentRoll);
+            telemetry.addData("TargetYaw", targetYaw);
+            telemetry.addData("CurrentYaw", currentYaw);
+            telemetry.addData("RollPower", power);
         }
     }
-    
+
+    /**
+     * 检查是否到达目标位置
+     * @return 是否两个轴都已到达目标
+     */
+    public boolean reachedTarget() {
+        return Math.abs(rollMotor.getCurrentPosition() / ROLL_TICKS_PER_DEGREE - targetRoll) <= ANGLE_TOLERANCE
+                && Math.abs(currentYaw - targetYaw) <= ANGLE_TOLERANCE;
+    }
+
+    /**
+     * 停止电机
+     */
+    public void stop() {
+        rollMotor.setPower(0);
+    }
+
     /**
      * 获取当前角度
-     * @return 包含roll和yaw的数组 [roll, yaw]
+     * @return 包含[roll, yaw]的数组
      */
     public double[] get_angle() {
-        updateCurrentAngles();
         return new double[]{currentRoll, currentYaw};
     }
-    
+
     /**
-     * 更新当前角度
+     * 获取目标角度
+     * @return 包含[targetRoll, targetYaw]的数组
      */
-    private void updateCurrentAngles() {
-        currentRoll = getRollAngle();
-        currentRoll = normalizeAngle(currentRoll);
-        currentYaw = getYawAngle();
+    public double[] getTarget() {
+        return new double[]{targetRoll, targetYaw};
     }
-    
+
     /**
-     * 从编码器获取水平旋转角度
-     * @return 水平旋转角度（度）
+     * 获取当前瞄准误差
+     * @return 包含[rollError, yawError]的数组
      */
-    private double getRollAngle() {
-        return rollMotor.getCurrentPosition() / ROLL_TICKS_PER_DEGREE;
+    public double[] getAimError() {
+        double rollError = Math.abs(normalizeAngle(targetRoll - currentRoll));
+        double yawError = Math.abs(targetYaw - currentYaw);
+        return new double[]{rollError, yawError};
     }
-    
-    /**
-     * 从编码器获取仰角
-     * @return 仰角（度）
-     */
-    private double getYawAngle() {
-        return yawMotor.getCurrentPosition() / YAW_TICKS_PER_DEGREE;
-    }
-    
+
     /**
      * 角度归一化到[-180, 180]度范围
-     * @param angle 原始角度（度）
-     * @return 归一化后的角度（度）
+     * @param angle 原始角度(度)
+     * @return 归一化后的角度(度)
      */
     private double normalizeAngle(double angle) {
         angle = angle % 360.0;
@@ -207,16 +256,5 @@ public class TurretDegreeController {
             angle += 360.0;
         }
         return angle;
-    }
-    
-    /**
-     * 获取当前瞄准误差
-     * @return 包含水平和仰角误差的数组 [rollError, yawError]
-     */
-    public double[] getAimError() {
-        updateCurrentAngles();
-        double rollError = Math.abs(normalizeAngle(targetRoll - currentRoll));
-        double yawError = Math.abs(targetYaw - currentYaw);
-        return new double[]{rollError, yawError};
     }
 }
