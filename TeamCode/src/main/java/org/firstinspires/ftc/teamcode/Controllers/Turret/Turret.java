@@ -30,7 +30,7 @@ public class Turret {
     private int blueTagID;                     // 蓝队AprilTag ID
     private int redTagID;                      // 红队AprilTag ID
 
-    
+
 
     // 状态变量
     private double roll;                        // 绕z轴角（水平旋转角）
@@ -38,23 +38,23 @@ public class Turret {
     private double k;                           // 速度转换参数k
     private double b;                           // 速度转换参数b
     private double delta_H;                      // 炮口与目标的高度差
-    
+
     // 发射机构状态
     private static final double SERVO_REST_POSITION = 0.0;    // 伺服电机休息位置
-    private static final double SERVO_LAUNCH_POSITION = 0.5;  // 伺服电机发射位置 
-    
+    private static final double SERVO_LAUNCH_POSITION = 0.5;  // 伺服电机发射位置
+
     // 常量
     private static final double APRILTAG_ANGLE_TOLERANCE = 0.5;      // AprilTag瞄准容差（度）
-    
+
     // 构造函数
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, double k,double b,double delta_H, String teamColor, int blueTagId, int redTagId) {
         // 初始化发射系统
         shooter = new Shooter(hardwareMap, telemetry);
         this.telemetry=telemetry;
-        
+
         // 初始化炮台旋转控制器
         turretDegreeController = new TurretDegreeController(hardwareMap,telemetry);
-        
+
         initAprilTag(hardwareMap);
 
         roll = 0.0;
@@ -66,14 +66,14 @@ public class Turret {
         this.blueTagID = blueTagId;
         this.redTagID = redTagId;
     }
-    
+
     /**
      * 简化构造函数，使用默认的tag ID
      */
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, double k,double b,double delta_H) {
         this(hardwareMap, telemetry, k, b, delta_H, "blue", 1, 2);
     }
-    
+
 
     /**
      * 获取当前高度差
@@ -82,20 +82,20 @@ public class Turret {
     public double getDeltaH() {
         return delta_H;
     }
-    
+
     // 初始化AprilTag处理器
     private void initAprilTag(HardwareMap hardwareMap) {
         // 创建AprilTag处理器
         aprilTag = new AprilTagProcessor.Builder()
                 .build();
-        
+
         // 创建视觉门户
         VisionPortal.Builder builder = new VisionPortal.Builder();
         builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
         builder.addProcessor(aprilTag);
         visionPortal = builder.build();
     }
-    
+
     /**
      * 旋转到指定角度
      * @param roll 水平旋转角（度，逆时针为正）

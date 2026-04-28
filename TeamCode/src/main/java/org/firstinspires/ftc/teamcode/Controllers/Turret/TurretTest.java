@@ -4,13 +4,37 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.OpModes.OffseasonDECODE;
+
 @TeleOp(name = "Turret Test", group = "Test")
 public class TurretTest extends LinearOpMode {
-    
+    public enum TEAM_COLOR {
+        RED,BLUE
+    }
+    OffseasonDECODE.TEAM_COLOR teamColor;
     private Turret turret;
+    public int targetTagId;
+    boolean InitStarted = false;
     
     @Override
     public void runOpMode() {
+        while(opModeInInit()||!InitStarted) {
+            if (gamepad1.a) {
+                teamColor = OffseasonDECODE.TEAM_COLOR.BLUE;
+            }
+            if (gamepad1.b) {
+                teamColor = OffseasonDECODE.TEAM_COLOR.RED;
+            }
+            // 确定目标tag ID
+            switch (teamColor) {
+                case BLUE:
+                    targetTagId = 20; // 默认蓝队tag ID
+                    break;
+                case RED:
+                    targetTagId = 24;
+                    break;
+            }
+        }
         // 初始化 Turret
         turret = new Turret(hardwareMap, telemetry,1.0,0.0,0,"blue",20,24);
         
@@ -29,10 +53,10 @@ public class TurretTest extends LinearOpMode {
             boolean shouldShoot = gamepad1.a;
             
             // 每帧调用 update 方法
-            turret.update(shouldShoot);
+            turret.update(shouldShoot,targetTagId);
             
             // 获取当前角度
-            Object[] aimResult = turret.aim();
+            Object[] aimResult = turret.aim(targetTagId);
             boolean isTargetFound = (boolean) aimResult[0];
             double currentRoll = (double) aimResult[1];
             double currentYaw = (double) aimResult[2];
